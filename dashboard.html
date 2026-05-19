@@ -8,6 +8,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -95,20 +98,19 @@
             border-left-color: var(--purple);
         }
 
-        /* Cor para o Diário (Verde Água/Acento) */
+        /* Cor para o Diário */
         .stat-card.diario {
             border-left-color: var(--accent);
         }
 
-        /* Cor para o Mensal (Azul Vibrante) */
+        /* Cor para o Mensal */
         .stat-card.mensal {
             border-left-color: var(--blue);
         }
 
-        /* Cor para o Anual (Roxo ou Dourado) */
+        /* Cor para o Anual */
         .stat-card.anual {
             border-left-color: var(--gold);
-            /* Ou use var(--gold) se preferir dourado */
         }
 
         .stat-label {
@@ -160,26 +162,16 @@
             padding: 12px;
             border-radius: 12px;
             margin-bottom: 10px;
-            border: 1px solid transparent;
-            font-size: 0.85rem;
-        }
-
-        .history-item:hover {
-            border-color: var(--blue);
-        }
-
-        .history-item {
-            transition: all 0.2s ease;
             border: 1px solid var(--border);
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
             cursor: pointer;
         }
 
         .history-item:hover {
             background: #1e293b;
-            /* Cor um pouco mais clara que o fundo */
             border-color: var(--blue);
             transform: translateX(5px);
-            /* Efeito de deslize para a direita */
         }
 
         .badge {
@@ -241,7 +233,6 @@
                 <div class="stat-value" id="totalAtletas">0</div>
                 <div class="stat-sub" style="font-size: 0.7rem; color: #64748b;">Total no Banco</div>
             </div>
-
         </div>
 
         <div class="dash-layout">
@@ -268,7 +259,6 @@
     </div>
 
     <script>
-
         // 1. Configurações corretas da Associação
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
@@ -300,6 +290,7 @@
                 }
             }
         });
+
         let chartP, chartB;
 
         function initCharts() {
@@ -332,12 +323,8 @@
                 snap.forEach(doc => {
                     const j = doc.data();
 
-                    // 1. Tratamento de Valores Robusto
                     const vMensal = parseFloat(String(j.valorMensalidadePago || 0).replace(',', '.'));
                     const vHoje = parseFloat(String(j.valorPagoHoje || 0).replace(',', '.'));
-
-                    // 2. Lógica de Contagem (Pizza e Porcentagem)
-                    // Usamos .toLowerCase() para evitar erro de letra maiúscula/minúscula
                     const tipoAtleta = String(j.tipo || "").trim().toLowerCase();
 
                     if (tipoAtleta === 'mensalista') {
@@ -348,7 +335,6 @@
                         avulsos++;
                     }
 
-                    // 3. Lógica de Faturamento
                     if (j.detalhePagamento && j.detalhePagamento.data) {
                         const dataLimpa = String(j.detalhePagamento.data).substring(0, 10);
                         const partes = dataLimpa.split('-');
@@ -363,7 +349,6 @@
                     }
                 });
 
-                // --- RENDERIZAÇÃO NA TELA ---
                 try {
                     const formatar = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -376,12 +361,10 @@
                     const porc = mensalistas > 0 ? Math.round((pagosM / mensalistas) * 100) : 0;
                     document.getElementById('labelSaude').innerText = `${porc}% de adesão mensal`;
 
-                    // Labels de tempo
                     if (document.getElementById('dataHoje')) document.getElementById('dataHoje').innerText = agora.toLocaleDateString('pt-BR');
                     if (document.getElementById('nomeMes')) document.getElementById('nomeMes').innerText = agora.toLocaleString('pt-BR', { month: 'long' });
                     if (document.getElementById('nomeAno')) document.getElementById('nomeAno').innerText = anoAtual;
 
-                    // --- ATUALIZAÇÃO DOS GRÁFICOS ---
                     if (chartP) {
                         chartP.data.datasets[0].data = [pagosM, pendentesM];
                         chartP.update();
@@ -400,7 +383,6 @@
         }
 
         function carregarHistoricoDash() {
-            // .limit(4) garante que apenas os 4 sorteios mais recentes apareçam
             db.collection("historico_sorteios").orderBy("data", "desc").limit(3).onSnapshot(snap => {
                 const lista = document.getElementById('listaHistoricoDash');
                 if (snap.empty) {
@@ -412,12 +394,11 @@
                 snap.forEach(doc => {
                     const h = doc.data();
                     const idSorteio = doc.id;
-                    // Trata a data se for Timestamp do Firebase ou String ISO
                     const dataObjeto = h.data?.seconds ? new Date(h.data.seconds * 1000) : new Date(h.data);
                     const dataFormatada = dataObjeto.toLocaleDateString('pt-BR');
 
                     lista.innerHTML += `
-                <div class="history-item" onclick="window.location.href='historico.html?id=${idSorteio}'" style="cursor:pointer;">
+                <div class="history-item" onclick="window.location.href='historico.html?id=${idSorteio}'">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <strong style="color:var(--blue)">${dataFormatada}</strong>
                         <i class="fas fa-chevron-right" style="font-size:0.7rem; color:var(--border)"></i>
