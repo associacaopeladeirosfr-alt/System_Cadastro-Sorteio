@@ -292,23 +292,6 @@
 
     <script>
 
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (!user) {
-                // Se não tiver sessão iniciada, manda de volta pro login
-                window.location.href = "login.html";
-            } else {
-                // Caso esteja logado, faz uma contraprova rápida de segurança pelo nome
-                const nomeGoogleRaw = user.displayName;
-                const nomeGoogleFormatado = nomeGoogleRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-
-                const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeGoogleFormatado).get();
-                if (query.empty) {
-                    await firebase.auth().signOut();
-                    window.location.href = "login.html";
-                }
-            }
-        });
-
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
             authDomain: "db-peladeiros.firebaseapp.com",

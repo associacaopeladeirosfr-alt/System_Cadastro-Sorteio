@@ -98,7 +98,7 @@
             opacity: 0.9;
         }
 
-        /* FORMULÁRIO (Escondido por padrão via JS/CSS) */
+        /* FORMULÁRIO */
         .card-form {
             background: var(--card);
             padding: 20px;
@@ -106,7 +106,6 @@
             border: 1px solid #334155;
             margin-bottom: 30px;
             display: none;
-            /* Escondido inicialmente */
         }
 
         .form-grid {
@@ -348,23 +347,7 @@
     </div>
 
     <script>
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (!user) {
-                // Se não tiver sessão iniciada, manda de volta pro login
-                window.location.href = "login.html";
-            } else {
-                // Caso esteja logado, faz uma contraprova rápida de segurança pelo nome
-                const nomeGoogleRaw = user.displayName;
-                const nomeGoogleFormatado = nomeGoogleRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-
-                const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeGoogleFormatado).get();
-                if (query.empty) {
-                    await firebase.auth().signOut();
-                    window.location.href = "login.html";
-                }
-            }
-        });
-
+        // 1. Configurações corretas da Associação
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
             authDomain: "db-peladeiros.firebaseapp.com",
@@ -375,10 +358,28 @@
             measurementId: "G-8N28SLY3S6"
         };
 
-
+        // 2. Inicialização única e correta do App
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
 
+        // 3. Definição das constantes globais sem duplicidade
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 4. Trava de segurança estruturada
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+            } else {
+                const emailGoogle = user.email.toLowerCase().trim();
+                const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
+                if (query.empty) {
+                    await auth.signOut();
+                    window.location.href = "login.html";
+                }
+            }
+        });
+
+        // Configurações lógicas da página
         let nivelSelecionado = 3;
         const legendas = {
             "1": "Perna de pau 🪵",
@@ -432,7 +433,7 @@
             starText.innerText = legendas[n];
         }
 
-        // PREPARAR EDIÇÃO (Abre o form preenchido automaticamente)
+        // PREPARAR EDIÇÃO
         window.prepararEdicao = function (id, nome, tipo, data, nivel) {
             document.getElementById('editId').value = id;
             document.getElementById('nomeJogador').value = nome;
@@ -444,7 +445,6 @@
             document.getElementById('btnAcao').innerText = "ATUALIZAR DADOS";
             document.getElementById('btnAcao').style.background = "#3b82f6";
 
-            // Esconde botão principal de novo cadastro e mostra o form de edição
             btnNovoAtleta.style.display = "none";
             containerForm.style.display = "block";
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -479,7 +479,7 @@
 
                 if (id) {
                     await db.collection("jogadores_2026_beta").doc(id).update(dados);
-                    alert("Dados atualizados!");
+                    alert("Dados updated!");
                 } else {
                     const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeFormatado).get();
                     if (!query.empty) { alert("⚠️ Nome já cadastrado!"); return; }
@@ -493,7 +493,7 @@
                     });
                     alert("Cadastrado com sucesso!");
                 }
-                fecharForm(); // Esconde o form após salvar com sucesso
+                fecharForm();
             } catch (err) { alert("Erro ao salvar."); }
         });
 
