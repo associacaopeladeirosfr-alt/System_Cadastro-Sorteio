@@ -292,6 +292,7 @@
 
     <script>
 
+        // 1. Configurações corretas da Associação
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
             authDomain: "db-peladeiros.firebaseapp.com",
@@ -301,9 +302,27 @@
             appId: "1:734317810376:web:24573f2b49fdd232134bfd",
             measurementId: "G-8N28SLY3S6"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
 
+        // 2. Inicialização única e correta do App
+        firebase.initializeApp(firebaseConfig);
+
+        // 3. Definição das constantes globais sem duplicidade
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 4. Trava de segurança estruturada
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+            } else {
+                const emailGoogle = user.email.toLowerCase().trim();
+                const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
+                if (query.empty) {
+                    await auth.signOut();
+                    window.location.href = "login.html";
+                }
+            }
+        });
         let CONFIG = { valorMensal: 60, valorAvulso: 15, diaLimite: 10 };
         let selId = "";
         let selCampo = "";
