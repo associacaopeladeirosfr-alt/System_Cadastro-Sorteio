@@ -11,11 +11,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
+            --bg-gradient: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+            --card: rgba(30, 41, 59, 0.7);
             --accent: #10b981;
-            --text: #f8fafc;
+            --accent-glow: rgba(16, 185, 129, 0.2);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
             --danger: #ef4444;
+            --border: #334155;
         }
 
         *,
@@ -26,8 +29,8 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            background: var(--bg-gradient);
+            color: var(--text-main);
             margin: 0;
             display: flex;
             align-items: center;
@@ -38,40 +41,70 @@
 
         .login-card {
             background: var(--card);
-            padding: 40px 30px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 45px 35px;
             border-radius: 24px;
-            border: 1px solid #334155;
-            max-width: 400px;
+            border: 1px solid var(--border);
+            max-width: 420px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
 
-        .logo-icon {
-            font-size: 3.5rem;
-            color: var(--accent);
-            margin-bottom: 15px;
+        .logo-container {
+            margin-bottom: 25px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo-img {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transition: transform 0.3s ease;
+        }
+
+        .login-card:hover .logo-img {
+            transform: scale(1.04);
         }
 
         h2 {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .badge-ano {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         p {
-            color: #94a3b8;
+            color: var(--text-muted);
             font-size: 0.95rem;
-            margin-bottom: 30px;
-            line-height: 1.5;
+            margin: 0 0 30px 0;
+            line-height: 1.6;
         }
 
         .btn-google {
             width: 100%;
             padding: 16px;
-            background: white;
-            color: #1e293b;
-            border: none;
-            border-radius: 12px;
+            background: #0f172a;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 14px;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
@@ -79,13 +112,14 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            transition: 0.3s;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.25s ease;
         }
 
         .btn-google:hover {
-            background: #f1f5f9;
+            background: #1e293b;
+            border-color: var(--accent);
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         .btn-google i {
@@ -97,19 +131,37 @@
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid var(--danger);
             color: #fca5a5;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 12px;
             margin-top: 20px;
             font-size: 0.85rem;
             display: none;
-            line-height: 1.4;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease forwards;
         }
 
         .loading {
             display: none;
             color: var(--accent);
-            margin-top: 15px;
-            font-size: 0.9rem;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .loading i {
+            margin-right: 8px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -117,23 +169,27 @@
 <body>
 
     <div class="login-card">
-        <div class="logo-icon">
-            <i class="fas fa-lock"></i>
+        <div class="logo-container">
+            <img src="logo.jpg" alt="Peladeiros F.R." class="logo-img" onerror="this.style.display='none';">
+            <h2>Futebol e Resenha</h2>
+            <span class="badge-ano">Gestão Peladeiros 2027</span>
         </div>
-        <h2>Peladeiros F.R.</h2>
-        <p>Área restrita. Faça login com um e-mail do Google autorizado nas configurações.</p>
+
+
+        <p>Área restrita à Administradores e Conselheiros. Efetue login com sua conta Google autorizada.</p>
 
         <button class="btn-google" id="btnLogin" onclick="loginComGoogle()">
             <i class="fab fa-google"></i> Entrar com o Google
         </button>
 
         <div class="loading" id="loadingArea">
-            <i class="fas fa-spinner fa-spin"></i> Verificando permissões de acesso...
+            <i class="fas fa-spinner fa-spin"></i> Validando credenciais de acesso...
         </div>
 
         <div class="error-message" id="msgErro">
-            ⚠️ <strong>Acesso Negado!</strong><br>
-            Este e-mail não possui autorização para acessar o sistema. Solicite acesso ao administrador.
+            <i class="fas fa-exclamation-triangle" style="margin-right: 5px;"></i> <strong>Acesso
+                Negado!</strong><br>
+            Este e-mail não possui autorização no sistema dos Peladeiros. Solicite a liberação ao Conselheiro.
         </div>
     </div>
 
@@ -151,12 +207,9 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Se o usuário já tiver uma sessão válida salva no navegador
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const emailGoogle = user.email.toLowerCase().trim();
-
-                // Compara direto com a coleção de e-mails autorizados
                 const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
                 if (!query.empty) {
                     window.location.href = "home.html";
@@ -179,16 +232,13 @@
                 const usuario = resultado.user;
                 const emailGoogle = usuario.email.toLowerCase().trim();
 
-                // Busca o e-mail na nova coleção de controle
                 const query = await db.collection("usuarios_permitidos")
                     .where("email", "==", emailGoogle)
                     .get();
 
                 if (!query.empty) {
-                    // E-mail autorizado! Vai direto para a index
                     window.location.href = "home.html";
                 } else {
-                    // E-mail não listado -> desloga na hora e avisa
                     await auth.signOut();
                     msgErro.style.display = "block";
                     btnLogin.style.display = "flex";
