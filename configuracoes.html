@@ -316,6 +316,7 @@
     </div>
 
     <script>
+        // 1. Configurações corretas da Associação
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
             authDomain: "db-peladeiros.firebaseapp.com",
@@ -325,11 +326,15 @@
             appId: "1:734317810376:web:24573f2b49fdd232134bfd",
             measurementId: "G-8N28SLY3S6"
         };
+
+        // 2. Inicialização única e correta do App
         firebase.initializeApp(firebaseConfig);
+
+        // 3. Definição das constantes globais sem duplicidade
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // TRAVA DE SEGURANÇA: Se não estiver logado e autorizado, chuta para a login.html
+        // 4. Trava de segurança estruturada
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
                 window.location.href = "login.html";

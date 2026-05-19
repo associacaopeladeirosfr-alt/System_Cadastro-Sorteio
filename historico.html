@@ -190,24 +190,7 @@
     </div>
 
     <script>
-
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (!user) {
-                // Se não tiver sessão iniciada, manda de volta pro login
-                window.location.href = "login.html";
-            } else {
-                // Caso esteja logado, faz uma contraprova rápida de segurança pelo nome
-                const nomeGoogleRaw = user.displayName;
-                const nomeGoogleFormatado = nomeGoogleRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-
-                const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeGoogleFormatado).get();
-                if (query.empty) {
-                    await firebase.auth().signOut();
-                    window.location.href = "login.html";
-                }
-            }
-        });
-
+        // 1. Configurações corretas da Associação
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
             authDomain: "db-peladeiros.firebaseapp.com",
@@ -217,9 +200,27 @@
             appId: "1:734317810376:web:24573f2b49fdd232134bfd",
             measurementId: "G-8N28SLY3S6"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
 
+        // 2. Inicialização única e correta do App
+        firebase.initializeApp(firebaseConfig);
+
+        // 3. Definição das constantes globais sem duplicidade
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // 4. Trava de segurança estruturada
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+            } else {
+                const emailGoogle = user.email.toLowerCase().trim();
+                const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
+                if (query.empty) {
+                    await auth.signOut();
+                    window.location.href = "login.html";
+                }
+            }
+        });
         // Pega o ID do documento pela URL
         const urlParams = new URLSearchParams(window.location.search);
         const peladaId = urlParams.get('id');
