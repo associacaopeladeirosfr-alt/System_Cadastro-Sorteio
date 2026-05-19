@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Peladeiros 2027</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --border: #334155;
+            --blue: #3b82f6;
+            --gold: #fbbf24;
+            --red: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .header-box-home {
+            display: flex;
+            align-items: center;
+            /* Alinha verticalmente no centro */
+            justify-content: flex-start;
+            /* Garante que tudo comece da esquerda */
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .logo-home {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: none;
+        }
+
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .menu-item {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.3s;
+        }
+
+        .menu-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+            background: #24334d;
+        }
+
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .bg-green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent);
+        }
+
+        .bg-blue {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--blue);
+        }
+
+        .bg-gold {
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--gold);
+        }
+
+        .bg-red {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--red);
+        }
+
+        .card-historico {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .item-historico {
+            background: #0f172a;
+            padding: 12px 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .btn-ver {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-ver:hover {
+            background: #1e293b;
+            /* Cor um pouco mais clara que o fundo */
+            border-color: var(--blue);
+            transform: translateX(5px);
+            /* Efeito de deslize para a direita */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-box-home">
+            <img src="logo.jpg" alt="Logo Peladeiros" class="logo-home">
+            <div class="title-group">
+                <h1 style="margin:0; font-size: 1.8rem;">
+                    Peladeiros ⚽🍖
+                </h1>
+                <span style="background: #334155; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;">Gestão
+                    Peladeiros 2027</span>
+            </div>
+        </div>
+
+
+        <div class="menu-grid">
+            <a href="caixa.html" class="menu-item">
+                <div class="icon-box bg-green"><i class="fas fa-cash-register"></i></div>
+                <div class="menu-text">
+                    <h3>Recebimentos</h3>
+                    <p>Caixa e Presenças</p>
+                </div>
+            </a>
+            <a href="sorteio.html" class="menu-item">
+                <div class="icon-box bg-blue"><i class="fas fa-random"></i></div>
+                <div class="menu-text">
+                    <h3>Sorteio</h3>
+                    <p>Gerar Times</p>
+                </div>
+            </a>
+            <a href="cadastro.html" class="menu-item">
+                <div class="icon-box bg-gold"><i class="fas fa-user-plus"></i></div>
+                <div class="menu-text">
+                    <h3>Jogadores</h3>
+                    <p>Gestão de Atletas</p>
+                </div>
+            </a>
+            <a href="dashboard.html" class="menu-item">
+                <div class="icon-box bg-red"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="menu-text">
+                    <h3>Dashboard</h3>
+                    <p>Relatórios Gerais</p>
+                </div>
+            </a>
+            <a href="configuracoes.html" class="menu-item">
+                <div class="icon-box bg-gold"><i class="fas fa-tools"></i></div>
+                <div class="menu-text">
+                    <h3>Configurações</h3>
+                    <p>Parâmetros do Sistema</p>
+                </div>
+            </a>
+        </div>
+
+</body>
+
+</html>

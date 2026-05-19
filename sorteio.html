@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio Peladeiros 2027</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --border: #334155;
+            --blue: #3b82f6;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            margin: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: 15px;
+            border: none;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .btn-home {
+            text-decoration: none;
+            color: #94a3b8;
+            background: #0f172a;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-home:hover {
+            background: #334155;
+            color: white;
+        }
+
+        .card-controles {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .grid-times {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .time-card {
+            background: #fff;
+            color: #333;
+            border-radius: 10px;
+            padding: 15px;
+            border-top: 8px solid #ccc;
+        }
+
+        .verde {
+            border-top-color: #22c55e;
+        }
+
+        .amarelo {
+            border-top-color: #eab308;
+        }
+
+        .vermelho {
+            border-top-color: #ef4444;
+        }
+
+        .roxo {
+            border-top-color: #a855f7;
+        }
+
+        .laranja {
+            border-top-color: #f97316;
+        }
+
+        .lista-jogadores {
+            text-align: left;
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .lista-jogadores li {
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .btn-sortear {
+            background: var(--accent);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 5px;
+        }
+
+        .btn-finalizar {
+            background: var(--blue);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 5px;
+            display: none;
+        }
+
+        .badge {
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: #cbd5e1;
+        }
+
+        .info-resumo {
+            color: var(--accent);
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-box">
+            <div class="title-group">
+                <h2 style="margin:0;">🍀 Sorteio Peladeiros</h2>
+                <span class="badge">Gestão Peladeiros 2027</span>
+            </div>
+            <a href="index.html" class="btn-home"><i class="fas fa-home"></i> Menu Principal</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-users" style="color:var(--blue)"></i>
+                <span class="stat-value" id="countAptos">0</span>
+                <span class="stat-label">Jogadores Linha</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-hands" style="color:var(--gold)"></i>
+                <span class="stat-value" id="countGoleiros">0</span>
+                <span class="stat-label">Goleiros</span>
+            </div>
+
+        </div>
+
+        <div class="card-controles">
+            <div id="infoAptos" class="info-resumo">Carregando lista de presença...</div>
+            <button class="btn-sortear" onclick="executarSorteio()">GERAR TIMES</button>
+            <button id="btnFinalizar" class="btn-finalizar" onclick="finalizarPelada()">FINALIZAR PELADA</button>
+        </div>
+
+        <div id="containerTimes" class="grid-times"></div>
+    </div>
+
+    <script>
+
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                // Se não tiver sessão iniciada, manda de volta pro login
+                window.location.href = "login.html";
+            } else {
+                // Caso esteja logado, faz uma contraprova rápida de segurança pelo nome
+                const nomeGoogleRaw = user.displayName;
+                const nomeGoogleFormatado = nomeGoogleRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+                const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeGoogleFormatado).get();
+                if (query.empty) {
+                    await firebase.auth().signOut();
+                    window.location.href = "login.html";
+                }
+            }
+        });
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB19jiX_esY_ZIq67jEy_qzZKsAwulJet0",
+            authDomain: "dbpeldeiros-homolog.firebaseapp.com",
+            projectId: "dbpeldeiros-homolog",
+            storageBucket: "dbpeldeiros-homolog.firebasestorage.app",
+            messagingSenderId: "299245269233",
+            appId: "1:299245269233:web:71732be283c3ecd8f07950",
+            measurementId: "G-G7FCVHQSXN"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let jogadoresAptos = [];
+        let timesGerados = null;
+
+        function carregarAptos() {
+            db.collection("jogadores_2026_beta").onSnapshot(snap => {
+                jogadoresAptos = [];
+                snap.forEach(doc => {
+                    const j = doc.data();
+
+                    // Verifica se o Check está marcado (lê formato S ou true)
+                    const checkManual = (j.presencaConfirmada === "S" || j.presencaConfirmada === true || j.presencaConfirmada === "true");
+                    const isGoleiro = j.goleiro === true;
+
+                    let apto = false;
+
+                    // 1. Se o Check manual foi marcado no Caixa, está apto (Mensalista ou Avulso)
+                    if (checkManual) {
+                        apto = true;
+                    }
+                    // 2. Regra de segurança para Goleiros (caso esqueçam de marcar o check)
+                    else if (isGoleiro) {
+                        apto = true;
+                    }
+                    // 3. Regra de segurança para Avulsos que pagaram agora
+                    else if (parseFloat(j.valorPagoHoje) > 0) {
+                        apto = true;
+                    }
+
+                    if (apto) {
+                        jogadoresAptos.push({ id: doc.id, ...j });
+                    }
+                });
+
+                // Atualiza o contador na tela verde
+                const infoDiv = document.getElementById('infoAptos');
+                if (infoDiv) {
+                    infoDiv.innerText = `${jogadoresAptos.length} jogadores aptos para o sorteio.`;
+                }
+            });
+        }
+        function executarSorteio() {
+            if (jogadoresAptos.length < 14) {
+                alert("Mínimo de 14 jogadores para sortear.");
+                return;
+            }
+
+            // 1. Embaralha a lista completa
+            let pool = [...jogadoresAptos].sort(() => Math.random() - 0.5);
+
+            // 2. Separa Goleiros e Linha (Linha ordenado por nível para equilíbrio)
+            const goleiros = pool.filter(j => j.goleiro === true);
+            const linha = pool.filter(j => !j.goleiro).sort((a, b) => b.nivel - a.nivel);
+
+            // 3. Define quantidade de times
+            let qtdTimes = 2;
+            if (pool.length >= 21) qtdTimes = 3;
+            if (pool.length >= 28) qtdTimes = 4;
+
+            const cores = ['verde', 'amarelo', 'vermelho', 'roxo'];
+            const resultado = { verde: [], amarelo: [], vermelho: [], roxo: [], laranja: [] };
+
+            // 4. Distribui Goleiros
+            goleiros.forEach((g, i) => {
+                if (i < qtdTimes) {
+                    resultado[cores[i]].push(g);
+                } else {
+                    resultado.laranja.push(g);
+                }
+            });
+
+            // 5. Distribui Linha (Lógica de Serpente)
+            let idx = 0;
+            let dir = 1;
+
+            linha.forEach(j => {
+                // Garante limite de 9 por time, o que sobrar vai para o reserva (laranja)
+                if (resultado[cores[idx]].length < 9) {
+                    resultado[cores[idx]].push(j);
+                } else {
+                    resultado.laranja.push(j);
+                }
+
+                idx += dir;
+                if (idx >= qtdTimes) {
+                    dir = -1;
+                    idx = qtdTimes - 1;
+                } else if (idx < 0) {
+                    dir = 1;
+                    idx = 0;
+                }
+            });
+
+            timesGerados = resultado;
+            renderizar(resultado);
+            document.getElementById('btnFinalizar').style.display = 'inline-block';
+        }
+
+        function renderizar(times) {
+            const container = document.getElementById('containerTimes');
+            container.innerHTML = "";
+            ['verde', 'amarelo', 'vermelho', 'roxo', 'laranja'].forEach(cor => {
+                if (times[cor].length > 0) {
+                    let html = `
+                    <div class="time-card ${cor}">
+                        <h3 style="margin:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                            ${cor === 'laranja' ? 'RESERVAS / EXCEDENTES' : 'TIME ' + cor.toUpperCase()}
+                        </h3>
+                        <ul class="lista-jogadores">`;
+
+                    times[cor].forEach(j => {
+                        html += `
+                        <li>
+                            <span>${j.goleiro ? '🧤' : '⚽'} ${j.nome}</span>
+                            <strong>${j.nivel}⭐</strong>
+                        </li>`;
+                    });
+
+                    html += `</ul><div style="font-size:0.8rem; color:#666; text-align:right;">${times[cor].length} Jogadores</div></div>`;
+                    container.innerHTML += html;
+                }
+            });
+        }
+
+        function carregarPainel() {
+            db.collection("jogadores_2026_beta").onSnapshot(snap => {
+                let countLinha = 0;
+                let countGoleiros = 0;
+                let caixaHoje = 0;
+
+                snap.forEach(doc => {
+                    const j = doc.data();
+                    const vHoje = parseFloat(j.valorPagoHoje) || 0;
+
+                    // LÓGICA PADRONIZADA: Lê o "Check" do Caixa (formato S ou true)
+                    const checkManual = (j.presencaConfirmada === "S" || j.presencaConfirmada === true || j.presencaConfirmada === "true");
+                    const isGoleiro = j.goleiro === true;
+
+                    let apto = false;
+
+                    // 1. Se marcou o check no Caixa, está apto
+                    if (checkManual) {
+                        apto = true;
+                    }
+                    // 2. Segurança para Goleiros (sempre aparecem como aptos se marcados como goleiro)
+                    else if (isGoleiro) {
+                        apto = true;
+                    }
+                    // 3. Segurança para quem pagou avulso hoje (o caixa já marca "S", mas garantimos aqui)
+                    else if (vHoje > 0) {
+                        apto = true;
+                    }
+
+                    // Contabilização nos cards do Painel
+                    if (apto) {
+                        if (isGoleiro) {
+                            countGoleiros++;
+                        } else {
+                            countLinha++;
+                        }
+                    }
+
+                    // O total de caixa soma apenas o que foi pago HOJE (avulsos)
+                    caixaHoje += vHoje;
+                });
+
+                document.getElementById('countAptos').innerText = countLinha;
+                document.getElementById('countGoleiros').innerText = countGoleiros;
+
+            });
+        }
+
+
+
+        async function finalizarPelada() {
+            if (!confirm("Isso salvará o histórico, desmarcará todos os jogadores e zerará os avulsos. Confirmar?")) return;
+
+            try {
+                // 1. Salva o histórico (mantém sua lógica atual)
+                await db.collection("historico_sorteios").add({
+                    data: new Date().toISOString(),
+                    totalJogadores: jogadoresAptos.length,
+                    times: timesGerados
+                });
+
+                const batch = db.batch();
+                const snap = await db.collection("jogadores_2026_beta").get();
+
+                snap.forEach(doc => {
+                    batch.update(doc.ref, {
+                        valorPagoHoje: 0,
+                        presencaConfirmada: false, // <--- Limpa o checkbox aqui
+                        confirmado: false
+                    });
+                });
+
+                await batch.commit();
+
+                alert("Pelada finalizada! Checkboxes desmarcados e valores diários zerados.");
+                window.location.href = "index_homolog.html";
+            } catch (e) {
+                alert("Erro ao finalizar: " + e.message);
+            }
+        }
+
+        window.onload = carregarAptos; carregarPainel(); 
+    </script>
+
+</body>
+
+</html>

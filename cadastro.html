@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro Peladeiros</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --danger: #ef4444;
+            --star: #fbbf24;
+            --edit: #3b82f6;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 15px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            width: 100%;
+        }
+
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 10px;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .btn-home {
+            text-decoration: none;
+            color: #94a3b8;
+            background: #1e293b;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-home:hover {
+            background: #334155;
+            color: white;
+        }
+
+        /* BOTÃO NOVO ATLETA */
+        .btn-novo-atleta {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+
+        .btn-novo-atleta:hover {
+            opacity: 0.9;
+        }
+
+        /* FORMULÁRIO (Escondido por padrão via JS/CSS) */
+        .card-form {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            margin-bottom: 30px;
+            display: none;
+            /* Escondido inicialmente */
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 10px;
+            font-size: 1.5rem;
+            color: #334155;
+            cursor: pointer;
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            justify-content: center;
+        }
+
+        .star-rating i.active {
+            color: var(--star);
+        }
+
+        .btn-salvar {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        .btn-cancelar {
+            width: 100%;
+            padding: 12px;
+            background: #475569;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin-top: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* LISTA CARD */
+        .lista-card {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid #334155;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .tabela-responsiva-container {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 460px;
+        }
+
+        th {
+            background: #0f172a;
+            padding: 12px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-align: left;
+        }
+
+        th:last-child,
+        td:last-child {
+            text-align: center;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .nome-edit {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nome-edit:hover {
+            text-decoration: underline;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 5px 10px;
+        }
+
+        .badge {
+            background: #334155;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 400px) {
+            .header-box {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-home {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-box">
+            <div class="title-group">
+                <h2 style="margin:0;">📝 Cadastro Peladeiros</h2>
+                <span class="badge">Gestão Peladeiros 2027</span>
+            </div>
+            <a href="index.html" class="btn-home">
+                <i class="fas fa-home"></i> Menu Principal
+            </a>
+        </div>
+
+        <button type="button" id="btnNovoAtleta" class="btn-novo-atleta" onclick="abrirFormNovo()">
+            <i class="fas fa-user-plus"></i> CADASTRAR NOVO ATLETA
+        </button>
+
+        <div class="card-form" id="containerForm">
+            <form id="formCadastro">
+                <input type="hidden" id="editId" value="">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nomeJogador">Nome do Jogador:</label>
+                        <input type="text" id="nomeJogador" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tipo">Adesão:</label>
+                        <select id="tipo">
+                            <option value="mensalista">Mensalista</option>
+                            <option value="avulso">Avulso</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dataNasc">Data Nascimento:</label>
+                        <input type="date" id="dataNasc">
+                    </div>
+
+                    <div class="form-group">
+                        <label id="labelHabilidade">Nível de Habilidade</label>
+                        <div class="star-rating" id="starGroup" role="group" aria-labelledby="labelHabilidade">
+                            <i class="fas fa-star active" data-value="1"></i>
+                            <i class="fas fa-star active" data-value="2"></i>
+                            <i class="fas fa-star active" data-value="3"></i>
+                            <i class="fas fa-star" data-value="4"></i>
+                            <i class="fas fa-star" data-value="5"></i>
+                        </div>
+                        <div id="star-text"
+                            style="color: var(--star); font-size: 0.85rem; margin-top: 5px; font-weight: bold; min-height: 20px; text-align: center;">
+                            Médio ⚖️
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" id="btnAcao" class="btn-salvar">SALVAR ATLETA</button>
+                <button type="button" id="btnCancelar" class="btn-cancelar" onclick="fecharForm()">FECHAR /
+                    CANCELAR</button>
+            </form>
+        </div>
+
+        <div class="lista-card">
+            <div class="tabela-responsiva-container">
+                <table class="sua-tabela-atual">
+                    <thead>
+                        <tr>
+                            <th>Nome (clique p/ editar)</th>
+                            <th>Tipo</th>
+                            <th>Nível</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabela">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                // Se não tiver sessão iniciada, manda de volta pro login
+                window.location.href = "login.html";
+            } else {
+                // Caso esteja logado, faz uma contraprova rápida de segurança pelo nome
+                const nomeGoogleRaw = user.displayName;
+                const nomeGoogleFormatado = nomeGoogleRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+                const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeGoogleFormatado).get();
+                if (query.empty) {
+                    await firebase.auth().signOut();
+                    window.location.href = "login.html";
+                }
+            }
+        });
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB19jiX_esY_ZIq67jEy_qzZKsAwulJet0",
+            authDomain: "dbpeldeiros-homolog.firebaseapp.com",
+            projectId: "dbpeldeiros-homolog",
+            storageBucket: "dbpeldeiros-homolog.firebasestorage.app",
+            messagingSenderId: "299245269233",
+            appId: "1:299245269233:web:71732be283c3ecd8f07950"
+        };
+
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let nivelSelecionado = 3;
+        const legendas = {
+            "1": "Perna de pau 🪵",
+            "2": "Esforçado 🏃‍♂️",
+            "3": "Médio ⚖️",
+            "4": "Bom ⚽",
+            "5": "Craque 💎"
+        };
+
+        const stars = document.querySelectorAll('#starGroup i');
+        const starText = document.getElementById('star-text');
+        const containerForm = document.getElementById('containerForm');
+        const btnNovoAtleta = document.getElementById('btnNovoAtleta');
+
+        // FUNÇÕES DE CONTROLE DE EXIBIÇÃO DO FORMULÁRIO
+        function abrirFormNovo() {
+            resetarForm();
+            btnNovoAtleta.style.display = "none";
+            containerForm.style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function fecharForm() {
+            containerForm.style.display = "none";
+            btnNovoAtleta.style.display = "flex";
+            resetarForm();
+        }
+
+        // LÓGICA DAS ESTRELAS
+        stars.forEach(star => {
+            star.addEventListener('click', () => {
+                nivelSelecionado = parseInt(star.getAttribute('data-value'));
+                atualizarEstrelasVisual(nivelSelecionado);
+            });
+
+            star.addEventListener('mouseover', () => {
+                const val = star.getAttribute('data-value');
+                starText.innerText = legendas[val];
+            });
+
+            star.addEventListener('mouseout', () => {
+                starText.innerText = legendas[nivelSelecionado] || "Clique para avaliar";
+            });
+        });
+
+        function atualizarEstrelasVisual(n) {
+            stars.forEach(s => {
+                const val = parseInt(s.getAttribute('data-value'));
+                s.classList.toggle('active', val <= n);
+            });
+            starText.innerText = legendas[n];
+        }
+
+        // PREPARAR EDIÇÃO (Abre o form preenchido automaticamente)
+        window.prepararEdicao = function (id, nome, tipo, data, nivel) {
+            document.getElementById('editId').value = id;
+            document.getElementById('nomeJogador').value = nome;
+            document.getElementById('tipo').value = tipo;
+            document.getElementById('dataNasc').value = data || "";
+            nivelSelecionado = nivel;
+            atualizarEstrelasVisual(nivel);
+
+            document.getElementById('btnAcao').innerText = "ATUALIZAR DADOS";
+            document.getElementById('btnAcao').style.background = "#3b82f6";
+
+            // Esconde botão principal de novo cadastro e mostra o form de edição
+            btnNovoAtleta.style.display = "none";
+            containerForm.style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        function resetarForm() {
+            document.getElementById('formCadastro').reset();
+            document.getElementById('editId').value = "";
+            document.getElementById('btnAcao').innerText = "SALVAR ATLETA";
+            document.getElementById('btnAcao').style.background = "var(--accent)";
+            nivelSelecionado = 3;
+            atualizarEstrelasVisual(3);
+        }
+
+        // SALVAR / ATUALIZAR
+        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const nomeRaw = document.getElementById('nomeJogador').value.trim();
+            const dataNasc = document.getElementById('dataNasc').value;
+            const tipo = document.getElementById('tipo').value;
+
+            const nomeFormatado = nomeRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+            try {
+                const dados = {
+                    nome: nomeFormatado,
+                    dataNascimento: dataNasc,
+                    tipo: tipo,
+                    nivel: nivelSelecionado
+                };
+
+                if (id) {
+                    await db.collection("jogadores_2026_beta").doc(id).update(dados);
+                    alert("Dados atualizados!");
+                } else {
+                    const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeFormatado).get();
+                    if (!query.empty) { alert("⚠️ Nome já cadastrado!"); return; }
+
+                    await db.collection("jogadores_2026_beta").add({
+                        ...dados,
+                        goleiro: false,
+                        valorMensalidadePago: 0,
+                        valorPagoHoje: 0,
+                        dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    alert("Cadastrado com sucesso!");
+                }
+                fecharForm(); // Esconde o form após salvar com sucesso
+            } catch (err) { alert("Erro ao salvar."); }
+        });
+
+        function carregarLista() {
+            db.collection("jogadores_2026_beta").orderBy("nome", "asc").onSnapshot(snap => {
+                const tbody = document.getElementById('corpoTabela');
+                if (!tbody) return;
+                tbody.innerHTML = "";
+                snap.forEach(doc => {
+                    const j = doc.data();
+                    const id = doc.id;
+                    const nomeSeguro = j.nome.replace(/'/g, "\\'");
+
+                    tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <span class="nome-edit" onclick="prepararEdicao('${id}', '${nomeSeguro}', '${j.tipo}', '${j.dataNascimento || ''}', ${j.nivel})">
+                            <i class="fas fa-edit" style="font-size: 0.8rem; opacity: 0.6;"></i> ${j.nome}
+                        </span>
+                    </td>
+                    <td>${j.tipo.toUpperCase()}</td>
+                    <td style="color:#fbbf24; letter-spacing: 2px;">${'★'.repeat(j.nivel)}${'☆'.repeat(5 - j.nivel)}</td>
+                    <td>
+                        <button class="btn-delete" onclick="excluirJogador('${id}', '${nomeSeguro}')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>`;
+                });
+            });
+        }
+
+        async function excluirJogador(id, nome) {
+            if (confirm("Excluir " + nome + "?")) {
+                await db.collection("jogadores_2026_beta").doc(id).delete();
+            }
+        }
+
+        window.onload = carregarLista;
+    </script>
+</body>
+
+</html>

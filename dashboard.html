@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Peladeiros 2027</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --border: #334155;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+            --gold: #fbbf24;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        /* Header Padronizado */
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: 20px;
+            border: none;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .btn-home {
+            text-decoration: none;
+            color: #94a3b8;
+            background: #0f172a;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-home:hover {
+            background: var(--border);
+            color: white;
+        }
+
+        /* Stats Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--blue);
+        }
+
+        .stat-card.green {
+            border-left-color: var(--accent);
+        }
+
+        .stat-card.purple {
+            border-left-color: var(--purple);
+        }
+
+        /* Cor para o Diário (Verde Água/Acento) */
+        .stat-card.diario {
+            border-left-color: var(--accent);
+        }
+
+        /* Cor para o Mensal (Azul Vibrante) */
+        .stat-card.mensal {
+            border-left-color: var(--blue);
+        }
+
+        /* Cor para o Anual (Roxo ou Dourado) */
+        .stat-card.anual {
+            border-left-color: var(--gold);
+            /* Ou use var(--gold) se preferir dourado */
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        /* Dashboard Main Layout */
+        .dash-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card-inner {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            min-height: 300px;
+        }
+
+        /* Histórico List */
+        .history-section {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+            font-size: 0.85rem;
+        }
+
+        .history-item:hover {
+            border-color: var(--blue);
+        }
+
+        .history-item {
+            transition: all 0.2s ease;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            background: #1e293b;
+            /* Cor um pouco mais clara que o fundo */
+            border-color: var(--blue);
+            transform: translateX(5px);
+            /* Efeito de deslize para a direita */
+        }
+
+        .badge {
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 900px) {
+            .dash-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-box">
+            <div class="title-group">
+                <h2 style="margin:0;">📊 Peladeiros Dashboard</h2>
+                <span class="badge">Gestão Peladeiros 2027</span>
+            </div>
+            <a href="index.html" class="btn-home">
+                <i class="fas fa-home"></i> Menu Principal
+            </a>
+        </div>
+
+        <div class="summary-grid">
+            <div class="stat-card diario">
+                <div class="stat-label">💲 Faturamento Diário</div>
+                <div class="stat-value" id="fatuDiario">R$ 0,00</div>
+                <div class="stat-sub" id="dataHoje" style="font-size: 0.7rem; color: #64748b;">--/--</div>
+            </div>
+
+            <div class="stat-card mensal">
+                <div class="stat-label">💶 Faturamento Mensal</div>
+                <div class="stat-value" id="fatuMensal">R$ 0,00</div>
+                <div class="stat-sub" id="nomeMes" style="font-size: 0.7rem; color: #64748b;">Mês Atual</div>
+            </div>
+
+            <div class="stat-card anual">
+                <div class="stat-label">💰 Faturamento Anual</div>
+                <div class="stat-value" id="fatuAnual">R$ 0,00</div>
+                <div class="stat-sub" id="nomeAno" style="font-size: 0.7rem; color: #64748b;">2026</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Mensalistas Pagos</div>
+                <div class="stat-value" id="countPagos">0</div>
+                <div class="stat-sub" id="labelSaude" style="font-size: 0.7rem; color: #64748b;">...</div>
+            </div>
+
+            <div class="stat-card purple">
+                <div class="stat-label">Atletas Registrados</div>
+                <div class="stat-value" id="totalAtletas">0</div>
+                <div class="stat-sub" style="font-size: 0.7rem; color: #64748b;">Total no Banco</div>
+            </div>
+
+        </div>
+
+        <div class="dash-layout">
+            <div class="chart-section">
+                <div class="card-inner">
+                    <h3 style="font-size: 1rem; margin-top: 0;"><i class="fas fa-coins"></i> Arrecadação Mensalistas
+                    </h3>
+                    <div style="height: 250px;"><canvas id="chartPizza"></canvas></div>
+                </div>
+                <div class="card-inner">
+                    <h3 style="font-size: 1rem; margin-top: 0;"><i class="fas fa-users"></i> Perfil do Grupo</h3>
+                    <div style="height: 250px;"><canvas id="chartBarras"></canvas></div>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <h3 style="font-size: 1rem; margin-top: 0;"><i class="fas fa-history" style="color: var(--blue);"></i>
+                    Últimas Peladas</h3>
+                <div id="listaHistoricoDash">
+                    <p style="color: #94a3b8; font-size: 0.85rem; text-align: center;">Buscando histórico...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                // Se não tiver sessão iniciada, manda de volta pro login
+                window.location.href = "login.html";
+            } else {
+                // Caso esteja logado, faz uma contraprova rápida de segurança pelo nome
+                const nomeGoogleRaw = user.displayName;
+                const nomeGoogleFormatado = nomeGoogleRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+                const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeGoogleFormatado).get();
+                if (query.empty) {
+                    await firebase.auth().signOut();
+                    window.location.href = "login.html";
+                }
+            }
+        });
+        const firebaseConfig = {
+            apiKey: "AIzaSyB19jiX_esY_ZIq67jEy_qzZKsAwulJet0",
+            authDomain: "dbpeldeiros-homolog.firebaseapp.com",
+            projectId: "dbpeldeiros-homolog",
+            storageBucket: "dbpeldeiros-homolog.firebasestorage.app",
+            messagingSenderId: "299245269233",
+            appId: "1:299245269233:web:71732be283c3ecd8f07950",
+            measurementId: "G-G7FCVHQSXN"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let chartP, chartB;
+
+        function initCharts() {
+            const ctxP = document.getElementById('chartPizza').getContext('2d');
+            const ctxB = document.getElementById('chartBarras').getContext('2d');
+
+            chartP = new Chart(ctxP, {
+                type: 'doughnut',
+                data: { labels: ['Pagos', 'Pendentes'], datasets: [{ data: [0, 0], backgroundColor: ['#10b981', '#334155'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } } }
+            });
+
+            chartB = new Chart(ctxB, {
+                type: 'bar',
+                data: { labels: ['Mensalistas', 'Avulsos'], datasets: [{ label: 'Qtd', data: [0, 0], backgroundColor: ['#3b82f6', '#a855f7'], borderRadius: 5 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#64748b' } }, x: { ticks: { color: '#fff' } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function atualizarDadosDash() {
+            db.collection("jogadores_2026_beta").onSnapshot(snap => {
+                let mensalistas = 0, avulsos = 0, pagosM = 0, pendentesM = 0;
+                let totalDiario = 0, totalMensal = 0, totalAnual = 0;
+
+                const agora = new Date();
+                const anoAtual = agora.getFullYear();
+                const mesAtual = agora.getMonth() + 1;
+                const hojeStr = agora.toISOString().split('T')[0];
+
+                snap.forEach(doc => {
+                    const j = doc.data();
+
+                    // 1. Tratamento de Valores Robusto
+                    const vMensal = parseFloat(String(j.valorMensalidadePago || 0).replace(',', '.'));
+                    const vHoje = parseFloat(String(j.valorPagoHoje || 0).replace(',', '.'));
+
+                    // 2. Lógica de Contagem (Pizza e Porcentagem)
+                    // Usamos .toLowerCase() para evitar erro de letra maiúscula/minúscula
+                    const tipoAtleta = String(j.tipo || "").trim().toLowerCase();
+
+                    if (tipoAtleta === 'mensalista') {
+                        mensalistas++;
+                        if (vMensal > 0) pagosM++;
+                        else pendentesM++;
+                    } else {
+                        avulsos++;
+                    }
+
+                    // 3. Lógica de Faturamento
+                    if (j.detalhePagamento && j.detalhePagamento.data) {
+                        const dataLimpa = String(j.detalhePagamento.data).substring(0, 10);
+                        const partes = dataLimpa.split('-');
+                        const pagtoAno = parseInt(partes[0]);
+                        const pagtoMes = parseInt(partes[1]);
+
+                        const valorCalculado = (tipoAtleta === 'mensalista') ? vMensal : vHoje;
+
+                        if (dataLimpa === hojeStr) totalDiario += valorCalculado;
+                        if (pagtoMes === mesAtual && pagtoAno === anoAtual) totalMensal += valorCalculado;
+                        if (pagtoAno === anoAtual) totalAnual += valorCalculado;
+                    }
+                });
+
+                // --- RENDERIZAÇÃO NA TELA ---
+                try {
+                    const formatar = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                    document.getElementById('fatuDiario').innerText = formatar(totalDiario);
+                    document.getElementById('fatuMensal').innerText = formatar(totalMensal);
+                    document.getElementById('fatuAnual').innerText = formatar(totalAnual);
+                    document.getElementById('totalAtletas').innerText = snap.size;
+                    document.getElementById('countPagos').innerText = pagosM;
+
+                    const porc = mensalistas > 0 ? Math.round((pagosM / mensalistas) * 100) : 0;
+                    document.getElementById('labelSaude').innerText = `${porc}% de adesão mensal`;
+
+                    // Labels de tempo
+                    if (document.getElementById('dataHoje')) document.getElementById('dataHoje').innerText = agora.toLocaleDateString('pt-BR');
+                    if (document.getElementById('nomeMes')) document.getElementById('nomeMes').innerText = agora.toLocaleString('pt-BR', { month: 'long' });
+                    if (document.getElementById('nomeAno')) document.getElementById('nomeAno').innerText = anoAtual;
+
+                    // --- ATUALIZAÇÃO DOS GRÁFICOS ---
+                    if (chartP) {
+                        chartP.data.datasets[0].data = [pagosM, pendentesM];
+                        chartP.update();
+                    }
+                    if (chartB) {
+                        chartB.data.datasets[0].data = [mensalistas, avulsos];
+                        chartB.update();
+                    }
+
+                    console.log("Dash Atualizado:", { pagosM, pendentesM, totalMensal });
+
+                } catch (err) {
+                    console.error("Erro ao renderizar dashboard:", err);
+                }
+            });
+        }
+
+        function carregarHistoricoDash() {
+            // .limit(4) garante que apenas os 4 sorteios mais recentes apareçam
+            db.collection("historico_sorteios").orderBy("data", "desc").limit(3).onSnapshot(snap => {
+                const lista = document.getElementById('listaHistoricoDash');
+                if (snap.empty) {
+                    lista.innerHTML = "<p style='text-align:center; font-size:0.8rem; color:#94a3b8;'>Nenhum jogo salvo.</p>";
+                    return;
+                }
+
+                lista.innerHTML = "";
+                snap.forEach(doc => {
+                    const h = doc.data();
+                    const idSorteio = doc.id;
+                    // Trata a data se for Timestamp do Firebase ou String ISO
+                    const dataObjeto = h.data?.seconds ? new Date(h.data.seconds * 1000) : new Date(h.data);
+                    const dataFormatada = dataObjeto.toLocaleDateString('pt-BR');
+
+                    lista.innerHTML += `
+                <div class="history-item" onclick="window.location.href='historico.html?id=${idSorteio}'" style="cursor:pointer;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:var(--blue)">${dataFormatada}</strong>
+                        <i class="fas fa-chevron-right" style="font-size:0.7rem; color:var(--border)"></i>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <span class="badge">${h.totalJogadores || 0} Atletas</span>
+                        <span class="badge" style="background:rgba(59, 130, 246, 0.1); color:var(--blue)">Ver Times</span>
+                    </div>
+                </div>
+            `;
+                });
+            });
+        }
+
+        window.onload = () => {
+            initCharts();
+            atualizarDadosDash();
+            carregarHistoricoDash();
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Peladeiros</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --danger: #ef4444;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card);
+            padding: 40px 30px;
+            border-radius: 24px;
+            border: 1px solid #334155;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo-icon {
+            font-size: 3.5rem;
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+        }
+
+        p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 16px;
+            background: white;
+            color: #1e293b;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-google:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+        .btn-google i {
+            font-size: 1.2rem;
+            color: #ea4335;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            display: none;
+            line-height: 1.4;
+        }
+
+        .loading {
+            display: none;
+            color: var(--accent);
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-card">
+        <div class="logo-icon">
+            <i class="fas fa-lock"></i>
+        </div>
+        <h2>Peladeiros F.R.</h2>
+        <p>Área restrita. Faça login com um e-mail do Google autorizado nas configurações.</p>
+
+        <button class="btn-google" id="btnLogin" onclick="loginComGoogle()">
+            <i class="fab fa-google"></i> Entrar com o Google
+        </button>
+
+        <div class="loading" id="loadingArea">
+            <i class="fas fa-spinner fa-spin"></i> Verificando permissões de acesso...
+        </div>
+
+        <div class="error-message" id="msgErro">
+            ⚠️ <strong>Acesso Negado!</strong><br>
+            Este e-mail não possui autorização para acessar o sistema. Solicite acesso ao administrador.
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB19jiX_esY_ZIq67jEy_qzZKsAwulJet0",
+            authDomain: "dbpeldeiros-homolog.firebaseapp.com",
+            projectId: "dbpeldeiros-homolog",
+            storageBucket: "dbpeldeiros-homolog.firebasestorage.app",
+            messagingSenderId: "299245269233",
+            appId: "1:299245269233:web:71732be283c3ecd8f07950"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Se o usuário já tiver uma sessão válida salva no navegador
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const emailGoogle = user.email.toLowerCase().trim();
+
+                // Compara direto com a coleção de e-mails autorizados
+                const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
+                if (!query.empty) {
+                    window.location.href = "home.html";
+                }
+            }
+        });
+
+        async function loginComGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const btnLogin = document.getElementById('btnLogin');
+            const loadingArea = document.getElementById('loadingArea');
+            const msgErro = document.getElementById('msgErro');
+
+            msgErro.style.display = "none";
+            btnLogin.style.display = "none";
+            loadingArea.style.display = "block";
+
+            try {
+                const resultado = await auth.signInWithPopup(provider);
+                const usuario = resultado.user;
+                const emailGoogle = usuario.email.toLowerCase().trim();
+
+                // Busca o e-mail na nova coleção de controle
+                const query = await db.collection("usuarios_permitidos")
+                    .where("email", "==", emailGoogle)
+                    .get();
+
+                if (!query.empty) {
+                    // E-mail autorizado! Vai direto para a index
+                    window.location.href = "index.html";
+                } else {
+                    // E-mail não listado -> desloga na hora e avisa
+                    await auth.signOut();
+                    msgErro.style.display = "block";
+                    btnLogin.style.display = "flex";
+                    loadingArea.style.display = "none";
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao efetuar o login ou janela fechada.");
+                btnLogin.style.display = "flex";
+                loadingArea.style.display = "none";
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caixa Peladeiros 2027</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --border: #334155;
+            --secondary: #94a3b8;
+            --danger: #ef4444;
+            --gold: #fbbf24;
+            --blue: #3b82f6;
+        }
+
+        .btn-home {
+            text-decoration: none;
+            color: #94a3b8;
+            background: #0f172a;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-home:hover {
+            background: #334155;
+            color: white;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .player-row {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-goleiro {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--secondary);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-goleiro.ativo {
+            color: var(--gold);
+            border-color: var(--gold);
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .name-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .name-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .tag {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .tag-mensalista {
+            background: var(--blue);
+            color: white;
+        }
+
+        .tag-avulso {
+            background: #64748b;
+            color: white;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 6px;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .status-badge.bloqueado {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
+        .pendente {
+            background: var(--gold);
+            color: #000;
+            /* Texto preto para contraste no dourado */
+            font-weight: bold;
+            border: none;
+        }
+
+        .pendente:hover {
+            background: #a08b12;
+            /* Azul um pouco mais escuro no hover */
+            transform: scale(1.05);
+            /* Leve aumento ao passar o mouse */
+        }
+
+        .pago-ok {
+            background: rgba(16, 185, 129, 0.1);
+            /* Fundo verde bem clarinho */
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        .check-presenca {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .check-presenca.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .check-presenca.disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--card);
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+
+        .input-group input {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px;
+            width: 100%;
+            outline: none;
+        }
+
+        .btn-modal {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .badge {
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: #cbd5e1;
+        }
+
+        .status-badge.bloqueado {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #334155;
+            color: #94a3b8;
+            border-color: #475569;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-box">
+            <div>
+                <h2 style="margin:0;">🙋‍♂️ Peladeiros Presença</h2>
+                <span class="badge">Gestão Peladeiros 2027</span>
+            </div>
+            <a href="index.html" class="btn-home"><i class="fas fa-home"></i> Menu Principal</a>
+        </div>
+        <div id="listaJogadores">Carregando dados...</div>
+    </div>
+
+    <div id="modalFinanceiro" class="modal">
+        <div class="modal-content">
+            <h3 id="mNome" style="margin-top:0"></h3>
+            <div class="input-group"><i class="fa-brands fa-pix"></i><input type="number" id="fPix" placeholder="Pix">
+            </div>
+            <div class="input-group"><i class="fas fa-money-bill-wave"></i><input type="number" id="fDin"
+                    placeholder="Dinheiro"></div>
+            <div class="input-group"><i class="fas fa-credit-card"></i><input type="number" id="fCrd"
+                    placeholder="Crédito"></div>
+            <button class="btn-modal" style="background: var(--accent); color: white;" onclick="confirmarCaixa()">SALVAR
+                PAGAMENTO</button>
+            <button class="btn-modal" style="background: var(--danger); color: white;" onclick="zerarCaixa()">ZERAR
+                VALORES</button>
+            <button class="btn-modal" style="background: var(--secondary); color: white;"
+                onclick="fecharModal()">CANCELAR</button>
+        </div>
+    </div>
+
+    <script>
+
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                // Se não tiver sessão iniciada, manda de volta pro login
+                window.location.href = "login.html";
+            } else {
+                // Caso esteja logado, faz uma contraprova rápida de segurança pelo nome
+                const nomeGoogleRaw = user.displayName;
+                const nomeGoogleFormatado = nomeGoogleRaw.toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+                const query = await db.collection("jogadores_2026_beta").where("nome", "==", nomeGoogleFormatado).get();
+                if (query.empty) {
+                    await firebase.auth().signOut();
+                    window.location.href = "login.html";
+                }
+            }
+        });
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB19jiX_esY_ZIq67jEy_qzZKsAwulJet0",
+            authDomain: "dbpeldeiros-homolog.firebaseapp.com",
+            projectId: "dbpeldeiros-homolog",
+            storageBucket: "dbpeldeiros-homolog.firebasestorage.app",
+            messagingSenderId: "299245269233",
+            appId: "1:299245269233:web:71732be283c3ecd8f07950"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let CONFIG = { valorMensal: 60, valorAvulso: 15, diaLimite: 10 };
+        let selId = "";
+        let selCampo = "";
+
+        async function init() {
+            try {
+                const doc = await db.collection("configuracoes").doc("parametros").get();
+                if (doc.exists) CONFIG = doc.data();
+                carregarDados();
+            } catch (e) { carregarDados(); }
+        }
+
+        function carregarDados() {
+            db.collection("jogadores_2026_beta").orderBy("nome", "asc").onSnapshot(snap => {
+                const lista = document.getElementById('listaJogadores');
+                lista.innerHTML = "";
+
+                snap.forEach(doc => {
+                    const j = doc.data();
+                    const id = doc.id;
+
+                    const isMensalista = String(j.tipo).toLowerCase() === 'mensalista';
+                    const isGoleiro = j.goleiro === true;
+                    const vMensal = parseFloat(j.valorMensalidadePago || 0);
+                    const vHoje = parseFloat(j.valorPagoHoje || 0);
+
+                    // 1. Lógica de Pagamento
+                    const estaPago = isMensalista ? (vMensal >= CONFIG.valorMensal) : (vHoje >= CONFIG.valorAvulso);
+
+                    // 2. Bloqueio do Botão CAIXA (Goleiro ou Mensalista já em dia)
+                    const caixaBloqueado = isGoleiro || (isMensalista && vMensal >= CONFIG.valorMensal);
+
+                    // 3. Lógica de Presença (Lê "S", "true" ou true)
+                    const apto = (j.presencaConfirmada === "S" || j.presencaConfirmada === "true" || j.presencaConfirmada === true);
+
+                    const msgAlerta = isGoleiro ? "Goleiros estão isentos de pagamento." : "Mensalista já realizou o pagamento do mês!";
+
+                    lista.innerHTML += `
+            <div class="player-row" style="${isGoleiro ? 'border-color: var(--gold)' : ''}">
+                <div class="player-info">
+                    <div class="btn-goleiro ${isGoleiro ? 'ativo' : ''}" onclick="window.toggleGoleiro('${id}', ${isGoleiro})">
+                        <i class="fas fa-hands"></i>
+                    </div>
+                    <div class="name-box">
+                        <span class="name-text">${j.nome}</span>
+                        <span class="tag ${isMensalista ? 'tag-mensalista' : 'tag-avulso'}">${j.tipo}</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="status-badge ${estaPago ? 'pago-ok' : 'pendente'} ${caixaBloqueado ? 'bloqueado' : ''}" 
+                         onclick="${caixaBloqueado ? `alert('${msgAlerta}')` : `window.abrirFinanceiro('${id}', '${j.nome}', '${isMensalista ? 'valorMensalidadePago' : 'valorPagoHoje'}')`}">
+                         ${estaPago ? 'PAGO' : 'CAIXA'}
+                    </div>
+
+                    <div class="check-presenca ${apto ? 'active' : ''} ${!estaPago && !isGoleiro ? 'disabled' : ''}" 
+                         onclick="window.togglePresenca('${id}', '${j.presencaConfirmada}', ${estaPago}, ${isGoleiro})">
+                         <i class="fas fa-check"></i>
+                    </div>
+                </div>
+            </div>`;
+                });
+            });
+        }
+
+        // --- FUNÇÕES DE AÇÃO ---
+
+        window.toggleGoleiro = async (id, statusAtual) => {
+            const novoStatusGoleiro = !statusAtual;
+
+            await db.collection("jogadores_2026_beta").doc(id).update({
+                goleiro: novoStatusGoleiro,
+                // Ao virar goleiro, marca presença "S". Ao deixar de ser, marca "N".
+                presencaConfirmada: novoStatusGoleiro ? "S" : "N",
+                dataConfirmacao: new Date().toISOString()
+            });
+        };
+
+        window.togglePresenca = async (id, statusAtual, estaPago, isGoleiro) => {
+            if (!estaPago && !isGoleiro) {
+                alert("Pagamento pendente! Registre o valor no caixa antes de confirmar presença.");
+                return;
+            }
+            // Inverte o status atual
+            const novoStatus = (statusAtual === "S" || statusAtual === "true") ? "N" : "S";
+            await db.collection("jogadores_2026_beta").doc(id).update({
+                presencaConfirmada: novoStatus,
+                dataConfirmacao: new Date().toISOString()
+            });
+        };
+
+        window.abrirFinanceiro = (id, nome, campo) => {
+            selId = id; selCampo = campo;
+            document.getElementById('mNome').innerText = nome;
+            document.getElementById('fPix').value = ""; document.getElementById('fDin').value = ""; document.getElementById('fCrd').value = "";
+            document.getElementById('modalFinanceiro').style.display = "block";
+        };
+
+        window.confirmarCaixa = async () => {
+            const pix = parseFloat(document.getElementById('fPix').value) || 0;
+            const din = parseFloat(document.getElementById('fDin').value) || 0;
+            const crd = parseFloat(document.getElementById('fCrd').value) || 0;
+            const total = pix + din + crd;
+
+            // Define o limite baseado no campo selecionado
+            const limite = selCampo === 'valorMensalidadePago' ? CONFIG.valorMensal : CONFIG.valorAvulso;
+
+            if (Math.abs(total - limite) > 0.01) {
+                alert(`Valor exato esperado: R$ ${limite.toFixed(2)}`);
+                return;
+            }
+
+            try {
+                let dadosUpdate = {
+                    [selCampo]: total,
+                    detalhePagamento: {
+                        pix,
+                        dinheiro: din,
+                        credito: crd,
+                        data: new Date().toISOString()
+                    },
+                    // Marca presença automática ao pagar (seja mensal ou avulso)
+                    presencaConfirmada: "S",
+                    dataConfirmacao: new Date().toISOString()
+                };
+
+                await db.collection("jogadores_2026_beta").doc(selId).update(dadosUpdate);
+                window.fecharModal();
+            } catch (e) {
+                alert("Erro ao salvar no banco.");
+            }
+        };
+        window.zerarCaixa = async () => {
+            if (confirm("Zerar valores e remover do sorteio?")) {
+                await db.collection("jogadores_2026_beta").doc(selId).update({
+                    valorMensalidadePago: 0,
+                    valorPagoHoje: 0,
+                    presencaConfirmada: "N"
+                });
+                window.fecharModal();
+            }
+        };
+
+        window.fecharModal = () => document.getElementById('modalFinanceiro').style.display = "none";
+
+        init();
+    </script>
+</body>
+
+</html>
