@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Migrador de Elenco - Peladeiros</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+
+<body style="background: #0f172a; color: white; font-family: sans-serif; padding: 40px; text-align: center;">
+
+    <h2>🔄 Migrador de Jogadores (Firebase)</h2>
+    <p>Do banco antigo <strong>dbpeladeiros</strong> para o novo <strong>db-peladeiros</strong></p>
+
+    <button id="btnMigrar"
+        style="padding: 15px 30px; background: #10b981; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+        INICIAR MIGRAÇÃO AGORA
+    </button>
+
+    <div id="status"
+        style="margin-top: 30px; font-family: monospace; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; background: #1e293b; padding: 20px; border-radius: 8px; min-height: 100px; max-height: 300px; overflow-y: auto;">
+        Aguardando clique para iniciar...
+    </div>
+
+    <script>
+        // Configuração do BANCO ANTIGO (Origem dos dados)
+        const configAntigo = {
+            apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
+            authDomain: "dbpeladeiros.firebaseapp.com",
+            projectId: "dbpeladeiros",
+            storageBucket: "dbpeladeiros.firebasestorage.app",
+            messagingSenderId: "460398325975",
+            appId: "1:460398325975:web:b382791c2d132d1a3d0092"
+        };
+
+        // Configuração do BANCO NOVO (Destino dos dados)
+        const configNovo = {
+            apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
+            authDomain: "db-peladeiros.firebaseapp.com",
+            projectId: "db-peladeiros",
+            storageBucket: "db-peladeiros.firebasestorage.app",
+            messagingSenderId: "734317810376",
+            appId: "1:734317810376:web:24573f2b49fdd232134bfd"
+        };
+
+        // Inicializa as duas instâncias do Firebase de forma isolada
+        const appAntigo = firebase.initializeApp(configAntigo, "antigo");
+        const appNovo = firebase.initializeApp(configNovo, "novo");
+
+        const dbAntigo = firebase.firestore(appAntigo);
+        const dbNovo = firebase.firestore(appNovo);
+
+        const logDiv = document.getElementById('status');
+
+        document.getElementById('btnMigrar').addEventListener('click', async () => {
+            document.getElementById('btnMigrar').disabled = true;
+            document.getElementById('btnMigrar').style.background = '#64748b';
+            logDiv.innerHTML = "⏳ Conectando ao banco antigo e buscando elenco...<br>";
+
+            try {
+                // 1. Busca os atletas na coleção 'elenco' do banco antigo
+                const snapshot = await dbAntigo.collection("jogadores").get();
+
+                if (snapshot.empty) {
+                    logDiv.innerHTML += "❌ Nenhum jogador encontrado na coleção 'elenco' do banco antigo.<br>";
+                    return;
+                }
+
+                logDiv.innerHTML += `✅ Encontrados ${snapshot.size} jogadores para migrar.<br><br>`;
+                let migrados = 0;
+
+                // 2. Passa de jogador em jogador copiando para o novo
+                for (const doc of snapshot.docs) {
+                    const dadosAntigos = doc.data();
+
+                    // Ajusta o nome capitalizado para o padrão limpo do novo app
+                    const nomeFormatado = dadosAntigos.nome ? dadosAntigos.nome.trim().toLowerCase().split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') : "Jogador Sem Nome";
+
+                    // Prepara a nova estrutura com os campos padrão necessários na dashboard/cadastro
+                    const dadosNovos = {
+                        nome: nomeFormatado,
+                        dataNascimento: dadosAntigos.nascimento || "", // Mapeia nascimento para dataNascimento
+                        tipo: dadosAntigos.tipo || "mensalista",     // Garante valor padrão caso não exista
+                        nivel: dadosAntigos.nivel || 3,             // Garante nível médio se estiver em branco
+                        goleiro: dadosAntigos.goleiro || false,
+                        valorMensalidadePago: 0,
+                        valorPagoHoje: 0,
+                        dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    // Salva na coleção do projeto novo
+                    await dbNovo.collection("jogadores_2026_beta").add(dadosNovos);
+
+                    migrados++;
+                    logDiv.innerHTML += `➡️ [${migrados}/${snapshot.size}] Migrado: ${nomeFormatado}<br>`;
+                    logDiv.scrollTop = logDiv.scrollHeight; // Desce o scroll do log automaticamente
+                }
+
+                logDiv.innerHTML += "<br>🎉 <strong>MIGRAÇÃO CONCLUÍDA COM SUCESSO!</strong> Todos os atletas já estão no novo banco.";
+                alert("Migração Concluída!");
+
+            } catch (error) {
+                console.error(error);
+                logDiv.innerHTML += `<br>❌ Erro durante a migração: ${error.message}<br>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
