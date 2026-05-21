@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatórios - Peladeiros 2027</title>
+    <title>Relatórios Peladeiros 2027</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -122,7 +122,7 @@
             padding: 15px;
             margin-bottom: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
 
@@ -195,7 +195,14 @@
             border: 1px solid var(--gold);
         }
 
-        /* Regras exclusivas para otimizar a impressão padrão do navegador */
+        .pg-badge {
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            background: #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
         @media print {
             body {
                 background: white;
@@ -234,9 +241,9 @@
     <div class="container">
         <div class="header-box">
             <div>
-                <h2 style="margin:0;">📊 Relatórios e Métricas</h2>
-                <span style="background: #334155; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem;">Dados
-                    Financeiros</span>
+                <h2 style="margin:0;">📊 Relatórios</h2>
+                <span style="background: #334155; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem;">Gestão
+                    Peladeiros 2027</span>
             </div>
             <div class="btn-group-header">
                 <button onclick="exportarPDF()" class="btn-acao btn-pdf"><i class="fas fa-file-pdf"></i> Exportar
@@ -275,10 +282,6 @@
                 <input type="date" id="filtroData" onchange="filtrarDados()">
             </div>
             <div class="filtro-grupo">
-                <label><i class="fas fa-search"></i> Buscar Nome</label>
-                <input type="text" id="filtroNome" placeholder="Nome..." oninput="filtrarDados()">
-            </div>
-            <div class="filtro-grupo">
                 <label><i class="fas fa-user-tag"></i> Contrato</label>
                 <select id="filtroTipo" onchange="filtrarDados()">
                     <option value="todos">Todos</option>
@@ -304,13 +307,14 @@
                         <th>Tipo</th>
                         <th>Mensalidade</th>
                         <th>Pago Hoje</th>
+                        <th>Forma de Pagamento</th>
                         <th>Presença</th>
                         <th>Situação</th>
                     </tr>
                 </thead>
                 <tbody id="corpoTabela">
                     <tr>
-                        <td colspan="6" style="text-align: center; color: var(--secondary);">Carregando relatórios...
+                        <td colspan="7" style="text-align: center; color: var(--secondary);">Carregando relatórios...
                         </td>
                     </tr>
                 </tbody>
@@ -319,6 +323,7 @@
     </div>
 
     <script>
+        // 1. Configurações corretas da Associação
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
             authDomain: "db-peladeiros.firebaseapp.com",
@@ -329,23 +334,41 @@
             measurementId: "G-8N28SLY3S6"
         };
 
+        // 2. Inicialização única e correta do App
         firebase.initializeApp(firebaseConfig);
+
+        // 3. Definição das constantes globais sem duplicidade
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // 4. Trava de segurança estruturada (CORRIGIDA COM AWAIT)
         auth.onAuthStateChanged(async (user) => {
-            if (!user) { window.location.href = "login.html"; }
-            else {
-                const emailGoogle = user.email.toLowerCase().trim();
-                const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
-                if (query.empty) { await auth.signOut(); window.location.href = "login.html"; }
+            if (!user) {
+                window.location.href = "login.html";
+            } else {
+                try {
+                    const emailGoogle = user.email.toLowerCase().trim();
+                    // Adicionado o 'await' que faltava aqui:
+                    const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
+
+                    if (query.empty) {
+                        await auth.signOut();
+                        window.location.href = "login.html";
+                    } else {
+                        // Usuário validado com sucesso! Agora sim iniciamos o app de forma segura.
+                        document.body.style.display = "block";
+                        init();
+                    }
+                } catch (error) {
+                    console.error("Erro na validação de segurança:", error);
+                    window.location.href = "login.html";
+                }
             }
         });
 
         let CONFIG = { valorMensal: 60, valorAvulso: 15, diaLimite: 10 };
         let listaCompletaJogadores = [];
 
-        // Define o input de data automaticamente para o dia atual ao iniciar
         function ajustarDataHoje() {
             const hoje = new Date();
             const ano = hoje.getFullYear();
@@ -375,7 +398,6 @@
 
         function filtrarDados() {
             const buscaData = document.getElementById('filtroData').value;
-            const buscaNome = document.getElementById('filtroNome').value.toLowerCase().trim();
             const buscaTipo = document.getElementById('filtroTipo').value;
             const buscaPagamento = document.getElementById('filtroPagamento').value;
 
@@ -387,12 +409,10 @@
             let pendentes = 0;
 
             listaCompletaJogadores.forEach(j => {
-                // Validação por data de confirmação (compara YYYY-MM-DD)
                 if (buscaData && j.dataConfirmacao) {
                     const dataJogador = j.dataConfirmacao.split('T')[0];
                     if (dataJogador !== buscaData) return;
                 } else if (buscaData && !j.dataConfirmacao) {
-                    // Se o filtro de data está ativo mas o jogador não tem data, esconde ele
                     return;
                 }
 
@@ -406,13 +426,24 @@
                 const estaPago = isGoleiro || pagouMensal || pagouHoje;
                 const aptoPresenca = (j.presencaConfirmada === "S" || j.presencaConfirmada === "true" || j.presencaConfirmada === true);
 
-                // Acumuladores dos cards superiores baseados na data selecionada
+                // --- SISTEMA INTELESENSE PARA FORMA DE PAGAMENTO ---
+                let formaPagamento = "-";
+
+                if (isGoleiro) {
+                    formaPagamento = "<span class='pg-badge' style='color: var(--gold); background: rgba(251, 191, 36, 0.1);'>Isento (Goleiro)</span>";
+                } else if (pagouMensal) {
+                    formaPagamento = "<span class='pg-badge' style='color: var(--blue); background: rgba(59, 130, 246, 0.1);'>Mensalidade OK</span>";
+                } else if (pagouHoje || vHoje > 0) {
+                    // Mapeia se o caixa do dia detectou valores nas propriedades
+                    formaPagamento = "<span class='pg-badge'>Confirmado</span>";
+                } else if (!estaPago) {
+                    formaPagamento = "<span style='color: var(--red); font-size: 0.8rem;'>Pendente</span>";
+                }
+
                 arrecadadoHoje += vHoje;
                 if (aptoPresenca) presencasConfirmadas++;
                 if (!estaPago && !isGoleiro) pendentes++;
 
-                // Demais filtros adicionais
-                if (buscaNome && !j.nome.toLowerCase().includes(buscaNome)) return;
                 if (buscaTipo !== 'todos' && String(j.tipo).toLowerCase() !== buscaTipo) return;
                 if (buscaPagamento === 'pago' && !estaPago) return;
                 if (buscaPagamento === 'pendente' && estaPago) return;
@@ -423,6 +454,7 @@
                         <td><span style="color: ${isMensalista ? 'var(--blue)' : 'var(--secondary)'}">${j.tipo}</span></td>
                         <td>R$ ${vMensal.toFixed(2)}</td>
                         <td>R$ ${vHoje.toFixed(2)}</td>
+                        <td>${formaPagamento}</td>
                         <td style="color: ${aptoPresenca ? 'var(--accent)' : 'var(--red)'}; font-weight: bold;">
                             ${aptoPresenca ? 'SIM' : 'NÃO'}
                         </td>
@@ -440,7 +472,7 @@
             document.getElementById('totalPendentes').innerText = pendentes;
 
             if (tabela.innerHTML === "") {
-                tabela.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--secondary);">Sem registros para esta data.</td></tr>`;
+                tabela.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--secondary);">Sem registros para esta data.</td></tr>`;
             }
         }
 
