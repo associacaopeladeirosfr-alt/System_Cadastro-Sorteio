@@ -26,20 +26,21 @@
             color: var(--text);
             margin: 0;
             padding: 20px;
-            position: relative;
-            /* Necessário para o posicionamento absoluto do botão */
         }
 
         .container {
             max-width: 900px;
             margin: auto;
+            position: relative;
+            /* Agora o container serve de base para o botão */
         }
 
-        /* --- NOVO ESTILO: BOTÃO CONFIGURAÇÕES TOPO ESQUERDO --- */
+        /* --- ALTERADO: BOTÃO ALINHADO À DIREITA DENTRO DO CONTAINER --- */
         .btn-config-topo {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 15px;
+            right: 20px;
+            /* Alinha na ponta direita dentro do container */
             text-decoration: none;
             color: #94a3b8;
             background: var(--card);
@@ -65,8 +66,7 @@
             align-items: center;
             justify-content: flex-start;
             gap: 15px;
-            padding: 40px 20px 20px 20px;
-            /* Aumentado o padding superior para não sobrepor o botão */
+            padding: 20px;
         }
 
         .title-group {
@@ -91,7 +91,7 @@
             margin-bottom: 30px;
         }
 
-        .menu-item {
+        .menu-itemgreen {
             background: var(--card);
             padding: 20px;
             border-radius: 20px;
@@ -104,10 +104,52 @@
             transition: 0.3s;
         }
 
-        .menu-item:hover {
+        .menu-itemgreen:hover {
             border-color: var(--accent);
             transform: translateY(-5px);
             background: #24334d;
+        }
+
+        .menu-itemblue {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.3s;
+        }
+
+        .menu-itemblue:hover {
+            border-color: var(--blue);
+            /* Cor da borda azul */
+            transform: translateY(-5px);
+            background: rgba(59, 130, 246, 0.1);
+            /* Fundo azul bem suave */
+        }
+
+        .menu-itemgold {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.3s;
+        }
+
+        .menu-itemgold:hover {
+            border-color: var(--gold);
+            /* Cor da borda azul */
+            transform: translateY(-5px);
+            background: rgba(251, 191, 36, 0.08);
+
         }
 
         .icon-box {
@@ -144,11 +186,11 @@
 
 <body>
 
-    <a href="configuracoes.html" class="btn-config-topo">
-        <i class="fas fa-tools"></i> Painel de Controle
-    </a>
-
     <div class="container">
+        <a href="configuracoes.html" class="btn-config-topo">
+            <i class="fas fa-tools"></i> Painel de Controle
+        </a>
+
         <div class="header-box-home">
             <img src="logo.jpg" alt="Logo Peladeiros" class="logo-home">
             <div class="title-group">
@@ -162,39 +204,39 @@
         </div>
 
         <div class="menu-grid">
-            <a href="caixa.html" class="menu-item">
+            <a href="caixa.html" class="menu-itemgreen">
                 <div class="icon-box bg-green"><i class="fas fa-cash-register"></i></div>
                 <div class="menu-text">
                     <h3>Recebimentos</h3>
                     <p>Caixa e Presenças</p>
                 </div>
             </a>
-            <a href="sorteio.html" class="menu-item">
+            <a href="sorteio.html" class="menu-itemblue">
                 <div class="icon-box bg-blue"><i class="fas fa-random"></i></div>
                 <div class="menu-text">
                     <h3>Sorteio</h3>
                     <p>Gerar Times</p>
                 </div>
             </a>
-            <a href="cadastro.html" class="menu-item">
+            <a href="cadastro.html" class="menu-itemgold">
                 <div class="icon-box bg-gold"><i class="fas fa-user-plus"></i></div>
                 <div class="menu-text">
                     <h3>Jogadores</h3>
                     <p>Gestão de Atletas</p>
                 </div>
             </a>
-            <a href="dashboard.html" class="menu-item">
-                <div class="icon-box bg-red"><i class="fa-solid fa-chart-line"></i></div>
+            <a href="dashboard.html" class="menu-itemgreen">
+                <div class="icon-box bg-green"><i class="fa-solid fa-chart-line"></i></div>
                 <div class="menu-text">
                     <h3>Dashboard</h3>
-                    <p>Relatórios Gerais</p>
+                    <p>Grásficos & Informações</p>
                 </div>
             </a>
-            <a href="configuracoes.html" class="menu-item">
-                <div class="icon-box bg-gold"><i class="fas fa-tools"></i></div>
+            <a href="relatorios.html" class="menu-itemblue">
+                <div class="icon-box bg-blue"><i class="fas fa-file"></i></i></div>
                 <div class="menu-text">
-                    <h3>Configurações</h3>
-                    <p>Parâmetros do Sistema</p>
+                    <h3>Gerência</h3>
+                    <p>Relatórios do Sistema</p>
                 </div>
             </a>
         </div>

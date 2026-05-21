@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - Peladeiros 2027</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --border: #334155;
+            --secondary: #94a3b8;
+            --blue: #3b82f6;
+            --gold: #fbbf24;
+            --red: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .btn-group-header {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-acao {
+            text-decoration: none;
+            color: #94a3b8;
+            background: var(--card);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-acao:hover {
+            color: var(--text);
+            border-color: var(--secondary);
+        }
+
+        .btn-pdf {
+            background: var(--red);
+            color: white;
+            border-color: var(--red);
+        }
+
+        .btn-pdf:hover {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+
+        /* --- CARDS DE RESUMO --- */
+        .resumo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card-resumo {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card-resumo i {
+            font-size: 1.8rem;
+        }
+
+        .resumo-info h4 {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+        }
+
+        .resumo-info p {
+            margin: 5px 0 0 0;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        /* --- BARRA DE FILTROS --- */
+        .filtros-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .filtro-grupo {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filtro-grupo label {
+            font-size: 0.75rem;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .filtro-grupo select,
+        .filtro-grupo input {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        /* --- TABELA DE RESULTADOS --- */
+        .tabela-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .status-tag {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .tag-pago {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        .tag-pendente {
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--gold);
+            border: 1px solid var(--gold);
+        }
+
+        /* Regras exclusivas para otimizar a impressão padrão do navegador */
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 0;
+            }
+
+            .btn-group-header,
+            .filtros-box {
+                display: none !important;
+            }
+
+            .card-resumo,
+            table,
+            .tabela-container {
+                background: white !important;
+                border-color: #cbd5e1 !important;
+                color: black !important;
+            }
+
+            th {
+                background: #f1f5f9 !important;
+                color: #475569 !important;
+            }
+
+            td {
+                border-color: #e2e8f0 !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-box">
+            <div>
+                <h2 style="margin:0;">📊 Relatórios e Métricas</h2>
+                <span style="background: #334155; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem;">Dados
+                    Financeiros</span>
+            </div>
+            <div class="btn-group-header">
+                <button onclick="exportarPDF()" class="btn-acao btn-pdf"><i class="fas fa-file-pdf"></i> Exportar
+                    PDF</button>
+                <a href="home.html" class="btn-acao"><i class="fas fa-home"></i> Menu Principal</a>
+            </div>
+        </div>
+
+        <div class="resumo-grid">
+            <div class="card-resumo">
+                <i class="fas fa-wallet" style="color: var(--accent);"></i>
+                <div class="resumo-info">
+                    <h4>Arrecadado no Período</h4>
+                    <p id="totalCaixa">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="card-resumo">
+                <i class="fas fa-users" style="color: var(--blue);"></i>
+                <div class="resumo-info">
+                    <h4>Presenças Confirmadas</h4>
+                    <p id="totalPresencas">0</p>
+                </div>
+            </div>
+            <div class="card-resumo">
+                <i class="fas fa-exclamation-triangle" style="color: var(--gold);"></i>
+                <div class="resumo-info">
+                    <h4>Pendentes</h4>
+                    <p id="totalPendentes">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtros-box">
+            <div class="filtro-grupo">
+                <label><i class="fas fa-calendar-day"></i> Filtrar por Data</label>
+                <input type="date" id="filtroData" onchange="filtrarDados()">
+            </div>
+            <div class="filtro-grupo">
+                <label><i class="fas fa-search"></i> Buscar Nome</label>
+                <input type="text" id="filtroNome" placeholder="Nome..." oninput="filtrarDados()">
+            </div>
+            <div class="filtro-grupo">
+                <label><i class="fas fa-user-tag"></i> Contrato</label>
+                <select id="filtroTipo" onchange="filtrarDados()">
+                    <option value="todos">Todos</option>
+                    <option value="mensalista">Mensalistas</option>
+                    <option value="avulso">Avulsos</option>
+                </select>
+            </div>
+            <div class="filtro-grupo">
+                <label><i class="fas fa-money-bill-wave"></i> Situação</label>
+                <select id="filtroPagamento" onchange="filtrarDados()">
+                    <option value="todos">Todos</option>
+                    <option value="pago">Pagos</option>
+                    <option value="pendente">Pendentes</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tabela-container">
+            <table id="tabelaDados">
+                <thead>
+                    <tr>
+                        <th>Jogador</th>
+                        <th>Tipo</th>
+                        <th>Mensalidade</th>
+                        <th>Pago Hoje</th>
+                        <th>Presença</th>
+                        <th>Situação</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--secondary);">Carregando relatórios...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
+            authDomain: "db-peladeiros.firebaseapp.com",
+            projectId: "db-peladeiros",
+            storageBucket: "db-peladeiros.firebasestorage.app",
+            messagingSenderId: "734317810376",
+            appId: "1:734317810376:web:24573f2b49fdd232134bfd",
+            measurementId: "G-8N28SLY3S6"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let CONFIG = { valorMensal: 60, valorAvulso: 15, diaLimite: 10 };
+        let listaCompletaJogadores = [];
+
+        // Define o input de data automaticamente para o dia atual ao iniciar
+        function ajustarDataHoje() {
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            document.getElementById('filtroData').value = `${ano}-${mes}-${dia}`;
+        }
+
+        async function init() {
+            ajustarDataHoje();
+            try {
+                const doc = await db.collection("configuracoes").doc("parametros").get();
+                if (doc.exists) CONFIG = doc.data();
+                puxarDadosFirebase();
+            } catch (e) { puxarDadosFirebase(); }
+        }
+
+        function puxarDadosFirebase() {
+            db.collection("jogadores_2026_beta").orderBy("nome", "asc").onSnapshot(snap => {
+                listaCompletaJogadores = [];
+                snap.forEach(doc => {
+                    listaCompletaJogadores.push({ id: doc.id, ...doc.data() });
+                });
+                filtrarDados();
+            });
+        }
+
+        function filtrarDados() {
+            const buscaData = document.getElementById('filtroData').value;
+            const buscaNome = document.getElementById('filtroNome').value.toLowerCase().trim();
+            const buscaTipo = document.getElementById('filtroTipo').value;
+            const buscaPagamento = document.getElementById('filtroPagamento').value;
+
+            const tabela = document.getElementById('corpoTabela');
+            tabela.innerHTML = "";
+
+            let arrecadadoHoje = 0;
+            let presencasConfirmadas = 0;
+            let pendentes = 0;
+
+            listaCompletaJogadores.forEach(j => {
+                // Validação por data de confirmação (compara YYYY-MM-DD)
+                if (buscaData && j.dataConfirmacao) {
+                    const dataJogador = j.dataConfirmacao.split('T')[0];
+                    if (dataJogador !== buscaData) return;
+                } else if (buscaData && !j.dataConfirmacao) {
+                    // Se o filtro de data está ativo mas o jogador não tem data, esconde ele
+                    return;
+                }
+
+                const isMensalista = String(j.tipo).toLowerCase() === 'mensalista';
+                const isGoleiro = j.goleiro === true;
+                const vMensal = parseFloat(j.valorMensalidadePago || 0);
+                const vHoje = parseFloat(j.valorPagoHoje || 0);
+
+                const pagouMensal = vMensal >= CONFIG.valorMensal;
+                const pagouHoje = vHoje >= CONFIG.valorAvulso;
+                const estaPago = isGoleiro || pagouMensal || pagouHoje;
+                const aptoPresenca = (j.presencaConfirmada === "S" || j.presencaConfirmada === "true" || j.presencaConfirmada === true);
+
+                // Acumuladores dos cards superiores baseados na data selecionada
+                arrecadadoHoje += vHoje;
+                if (aptoPresenca) presencasConfirmadas++;
+                if (!estaPago && !isGoleiro) pendentes++;
+
+                // Demais filtros adicionais
+                if (buscaNome && !j.nome.toLowerCase().includes(buscaNome)) return;
+                if (buscaTipo !== 'todos' && String(j.tipo).toLowerCase() !== buscaTipo) return;
+                if (buscaPagamento === 'pago' && !estaPago) return;
+                if (buscaPagamento === 'pendente' && estaPago) return;
+
+                tabela.innerHTML += `
+                    <tr>
+                        <td style="font-weight: 600;">${j.nome} ${isGoleiro ? '🧤' : ''}</td>
+                        <td><span style="color: ${isMensalista ? 'var(--blue)' : 'var(--secondary)'}">${j.tipo}</span></td>
+                        <td>R$ ${vMensal.toFixed(2)}</td>
+                        <td>R$ ${vHoje.toFixed(2)}</td>
+                        <td style="color: ${aptoPresenca ? 'var(--accent)' : 'var(--red)'}; font-weight: bold;">
+                            ${aptoPresenca ? 'SIM' : 'NÃO'}
+                        </td>
+                        <td>
+                            <span class="status-tag ${estaPago ? 'tag-pago' : 'tag-pendente'}">
+                                ${estaPago ? 'PAGO' : 'PENDENTE'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('totalCaixa').innerText = `R$ ${arrecadadoHoje.toFixed(2)}`;
+            document.getElementById('totalPresencas').innerText = presencasConfirmadas;
+            document.getElementById('totalPendentes').innerText = pendentes;
+
+            if (tabela.innerHTML === "") {
+                tabela.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--secondary);">Sem registros para esta data.</td></tr>`;
+            }
+        }
+
+        function exportarPDF() {
+            window.print();
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
