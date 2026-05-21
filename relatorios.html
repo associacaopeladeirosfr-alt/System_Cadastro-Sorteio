@@ -199,8 +199,28 @@
             font-size: 0.75rem;
             color: #cbd5e1;
             background: #334155;
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* Cores customizadas para cada tipo de pagamento */
+        .badge-pix {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-dinheiro {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-credito {
+            background: rgba(167, 139, 250, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(167, 139, 250, 0.3);
         }
 
         @media print {
@@ -232,11 +252,17 @@
                 border-color: #e2e8f0 !important;
                 color: black !important;
             }
+
+            .pg-badge {
+                background: #f1f5f9 !important;
+                color: black !important;
+                border: 1px solid #cbd5e1 !important;
+            }
         }
     </style>
 </head>
 
-<body>
+<body style="display: none;">
 
     <div class="container">
         <div class="header-box">
@@ -323,7 +349,6 @@
     </div>
 
     <script>
-        // 1. Configurações corretas da Associação
         const firebaseConfig = {
             apiKey: "AIzaSyBji-wGGD2dl8STFS2tu23UKFaUrPC8Bww",
             authDomain: "db-peladeiros.firebaseapp.com",
@@ -334,33 +359,27 @@
             measurementId: "G-8N28SLY3S6"
         };
 
-        // 2. Inicialização única e correta do App
         firebase.initializeApp(firebaseConfig);
 
-        // 3. Definição das constantes globais sem duplicidade
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // 4. Trava de segurança estruturada (CORRIGIDA COM AWAIT)
+        // Trava de segurança corrigida com 'await' e exibição controlada do body
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
                 window.location.href = "login.html";
             } else {
                 try {
                     const emailGoogle = user.email.toLowerCase().trim();
-                    // Adicionado o 'await' que faltava aqui:
                     const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
-
                     if (query.empty) {
                         await auth.signOut();
                         window.location.href = "login.html";
                     } else {
-                        // Usuário validado com sucesso! Agora sim iniciamos o app de forma segura.
                         document.body.style.display = "block";
                         init();
                     }
-                } catch (error) {
-                    console.error("Erro na validação de segurança:", error);
+                } catch (e) {
                     window.location.href = "login.html";
                 }
             }
@@ -426,18 +445,29 @@
                 const estaPago = isGoleiro || pagouMensal || pagouHoje;
                 const aptoPresenca = (j.presencaConfirmada === "S" || j.presencaConfirmada === "true" || j.presencaConfirmada === true);
 
-                // --- SISTEMA INTELESENSE PARA FORMA DE PAGAMENTO ---
+                // --- SISTEMA DINÂMICO PARA FORMA DE PAGAMENTO ---
                 let formaPagamento = "-";
 
                 if (isGoleiro) {
-                    formaPagamento = "<span class='pg-badge' style='color: var(--gold); background: rgba(251, 191, 36, 0.1);'>Isento (Goleiro)</span>";
-                } else if (pagouMensal) {
-                    formaPagamento = "<span class='pg-badge' style='color: var(--blue); background: rgba(59, 130, 246, 0.1);'>Mensalidade OK</span>";
-                } else if (pagouHoje || vHoje > 0) {
-                    // Mapeia se o caixa do dia detectou valores nas propriedades
-                    formaPagamento = "<span class='pg-badge'>Confirmado</span>";
-                } else if (!estaPago) {
-                    formaPagamento = "<span style='color: var(--red); font-size: 0.8rem;'>Pendente</span>";
+                    formaPagamento = "<span class='pg-badge' style='color: var(--gold); background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold);'>Isento (Goleiro)</span>";
+                } else if (estaPago) {
+                    // Pega a string de forma de pagamento vinda do Firestore (converte para minúsculo para evitar erros de digitação)
+                    // Caso seu campo no firebase tenha outro nome (ex: j.metodo), altere aqui para j.metodo
+                    const metodoBD = String(j.formaPagamento || "").toLowerCase().trim();
+
+                    if (metodoBD.includes("pix")) {
+                        formaPagamento = "<span class='pg-badge badge-pix'><i class='fa-solid fa-qrcode'></i> Pix</span>";
+                    } else if (metodoBD.includes("dinheiro")) {
+                        formaPagamento = "<span class='pg-badge badge-dinheiro'><i class='fa-solid fa-money-bill-1'></i> Dinheiro</span>";
+                    } else if (metodoBD.includes("credito") || metodoBD.includes("crédito") || metodoBD.includes("cartao")) {
+                        formaPagamento = "<span class='pg-badge badge-credito'><i class='fa-solid fa-credit-card'></i> Crédito</span>";
+                    } else if (isMensalista && pagouMensal) {
+                        formaPagamento = "<span class='pg-badge' style='color: var(--blue); background: rgba(59, 130, 246, 0.1);'>Mensalidade OK</span>";
+                    } else {
+                        formaPagamento = "<span class='pg-badge'>Confirmado</span>";
+                    }
+                } else {
+                    formaPagamento = "<span style='color: var(--red); font-size: 0.8rem; font-weight: bold;'>Pendente</span>";
                 }
 
                 arrecadadoHoje += vHoje;
@@ -479,8 +509,6 @@
         function exportarPDF() {
             window.print();
         }
-
-        init();
     </script>
 </body>
 
