@@ -26,6 +26,8 @@
             color: var(--text);
             margin: 0;
             padding: 20px;
+            position: relative;
+            /* Necessário para o posicionamento absoluto do botão */
         }
 
         .container {
@@ -33,14 +35,38 @@
             margin: auto;
         }
 
+        /* --- NOVO ESTILO: BOTÃO CONFIGURAÇÕES TOPO ESQUERDO --- */
+        .btn-config-topo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #94a3b8;
+            background: var(--card);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+            z-index: 10;
+        }
+
+        .btn-config-topo:hover {
+            color: var(--gold);
+            border-color: var(--gold);
+            background: rgba(251, 191, 36, 0.05);
+        }
+
         .header-box-home {
             display: flex;
             align-items: center;
-            /* Alinha verticalmente no centro */
             justify-content: flex-start;
-            /* Garante que tudo comece da esquerda */
             gap: 15px;
-            padding: 20px;
+            padding: 40px 20px 20px 20px;
+            /* Aumentado o padding superior para não sobrepor o botão */
         }
 
         .title-group {
@@ -57,7 +83,6 @@
             border-radius: 50%;
             border: none;
         }
-
 
         .menu-grid {
             display: grid;
@@ -114,45 +139,14 @@
             background: rgba(239, 68, 68, 0.1);
             color: var(--red);
         }
-
-        .card-historico {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-        }
-
-        .item-historico {
-            background: #0f172a;
-            padding: 12px 15px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .btn-ver {
-            background: var(--blue);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-ver:hover {
-            background: #1e293b;
-            /* Cor um pouco mais clara que o fundo */
-            border-color: var(--blue);
-            transform: translateX(5px);
-            /* Efeito de deslize para a direita */
-        }
     </style>
 </head>
 
 <body>
+
+    <a href="configuracoes.html" class="btn-config-topo">
+        <i class="fas fa-tools"></i> Painel de Controle
+    </a>
 
     <div class="container">
         <div class="header-box-home">
@@ -161,11 +155,11 @@
                 <h1 style="margin:0; font-size: 1.8rem;">
                     Peladeiros ⚽🍖
                 </h1>
-                <span style="background: #334155; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;">Gestão
-                    Peladeiros 2027</span>
+                <span style="background: #334155; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;">
+                    Gestão Peladeiros 2027
+                </span>
             </div>
         </div>
-
 
         <div class="menu-grid">
             <a href="caixa.html" class="menu-item">
@@ -204,6 +198,7 @@
                 </div>
             </a>
         </div>
+    </div>
 
 </body>
 
