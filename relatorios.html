@@ -331,6 +331,16 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) { window.location.href = "login.html"; }
+            else {
+                const emailGoogle = user.email.toLowerCase().trim();
+                const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
+                if (query.empty) { await auth.signOut(); window.location.href = "login.html"; }
+            }
+        });
 
         let CONFIG = { valorMensal: 60, valorAvulso: 15, diaLimite: 10 };
         let listaCompletaJogadores = [];
