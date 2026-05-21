@@ -123,13 +123,14 @@
         }
 
         .status-badge {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 6px;
             text-align: center;
-            min-width: 60px;
+            min-width: 80px;
+            transition: 0.2s;
         }
 
         .pendente {
@@ -148,6 +149,7 @@
             color: #94a3b8 !important;
             cursor: not-allowed;
             opacity: 0.5;
+            border: none;
         }
 
         .check-presenca {
@@ -251,6 +253,7 @@
     <div id="modalFinanceiro" class="modal">
         <div class="modal-content">
             <h3 id="mNome" style="margin-top:0"></h3>
+            <p id="mInfoValor" style="font-size: 0.85rem; color: var(--secondary); margin-bottom: 15px;"></p>
             <div class="input-group"><i class="fa-brands fa-pix"></i><input type="number" id="fPix" placeholder="Pix">
             </div>
             <div class="input-group"><i class="fas fa-money-bill-wave"></i><input type="number" id="fDin"
@@ -306,8 +309,6 @@
             db.collection("jogadores_2026_beta").orderBy("nome", "asc").onSnapshot(snap => {
                 const lista = document.getElementById('listaJogadores');
                 lista.innerHTML = "";
-
-                // Pegar dia atual para validar mensalistas
                 const diaHoje = new Date().getDate();
 
                 snap.forEach(doc => {
@@ -319,21 +320,37 @@
                     const vMensal = parseFloat(j.valorMensalidadePago || 0);
                     const vHoje = parseFloat(j.valorPagoHoje || 0);
 
-                    // Lógica de Prazo para Mensalista
+                    // 1. Verificação de status de pagamento
                     const pagouMensal = vMensal >= CONFIG.valorMensal;
+                    const pagouHoje = vHoje >= CONFIG.valorAvulso;
                     const prazoAtrasado = isMensalista && !pagouMensal && (diaHoje > CONFIG.diaLimite);
 
-                    // Status Final de Pagamento
-                    const estaPago = isGoleiro || (isMensalista ? pagouMensal : vHoje >= CONFIG.valorAvulso);
+                    // O jogador está "Liberado" se for goleiro OU pagou mensal OU pagou hoje
+                    const estaPago = isGoleiro || pagouMensal || pagouHoje;
 
-                    // Bloqueio do botão Caixa
-                    let caixaBloqueado = isGoleiro || (isMensalista && pagouMensal) || prazoAtrasado;
+                    // 2. Lógica de liberação para pagamento avulso pós-prazo
+                    let statusLabel = "CAIXA";
+                    let statusClass = "pendente";
+                    let campoDestino = isMensalista ? "valorMensalidadePago" : "valorPagoHoje";
+                    let bloqueado = false;
 
-                    // Mensagens de Alerta
-                    let msgAlerta = "";
-                    if (isGoleiro) msgAlerta = "Goleiros estão isentos.";
-                    else if (isMensalista && pagouMensal) msgAlerta = "Mensalidade já quitada!";
-                    else if (prazoAtrasado) msgAlerta = `Prazo para mensalistas expirou (Dia limite: ${CONFIG.diaLimite}).`;
+                    if (isGoleiro) {
+                        statusLabel = "PAGO";
+                        statusClass = "pago-ok";
+                        bloqueado = true;
+                    } else if (pagouMensal) {
+                        statusLabel = "PAGO (M)";
+                        statusClass = "pago-ok";
+                        bloqueado = true;
+                    } else if (pagouHoje) {
+                        statusLabel = "PAGO (A)";
+                        statusClass = "pago-ok";
+                        bloqueado = false; // Permite zerar ou editar se necessário
+                    } else if (prazoAtrasado) {
+                        statusLabel = "AVULSO (ATRASO)";
+                        statusClass = "pendente";
+                        campoDestino = "valorPagoHoje"; // OBRIGA a pagar o avulso
+                    }
 
                     const apto = (j.presencaConfirmada === "S" || j.presencaConfirmada === "true" || j.presencaConfirmada === true);
 
@@ -349,9 +366,9 @@
                     </div>
                 </div>
                 <div class="controls">
-                    <div class="status-badge ${estaPago ? 'pago-ok' : 'pendente'} ${caixaBloqueado ? 'bloqueado' : ''}" 
-                         onclick="${caixaBloqueado ? `alert('${msgAlerta}')` : `window.abrirFinanceiro('${id}', '${j.nome}', '${isMensalista ? 'valorMensalidadePago' : 'valorPagoHoje'}')`}">
-                         ${estaPago ? 'PAGO' : (prazoAtrasado ? 'ATRASADO' : 'CAIXA')}
+                    <div class="status-badge ${statusClass} ${bloqueado ? 'bloqueado' : ''}" 
+                         onclick="${bloqueado ? `console.log('Isento ou Pago')` : `window.abrirFinanceiro('${id}', '${j.nome}', '${campoDestino}')`}">
+                         ${statusLabel}
                     </div>
 
                     <div class="check-presenca ${apto ? 'active' : ''} ${!estaPago ? 'disabled' : ''}" 
@@ -374,7 +391,7 @@
 
         window.togglePresenca = async (id, statusAtual, estaPago, isGoleiro) => {
             if (!estaPago && !isGoleiro) {
-                alert("Pagamento pendente ou prazo de mensalista expirado!");
+                alert("Pagamento pendente! O jogador precisa pagar a mensalidade ou o valor avulso (se o prazo expirou).");
                 return;
             }
             const novoStatus = (statusAtual === "S" || statusAtual === "true") ? "N" : "S";
@@ -386,7 +403,10 @@
 
         window.abrirFinanceiro = (id, nome, campo) => {
             selId = id; selCampo = campo;
+            const valorEsperado = campo === 'valorMensalidadePago' ? CONFIG.valorMensal : CONFIG.valorAvulso;
+
             document.getElementById('mNome').innerText = nome;
+            document.getElementById('mInfoValor').innerText = `Valor a pagar: R$ ${valorEsperado.toFixed(2)}`;
             document.getElementById('fPix').value = "";
             document.getElementById('fDin').value = "";
             document.getElementById('fCrd').value = "";
@@ -401,7 +421,7 @@
             const limite = selCampo === 'valorMensalidadePago' ? CONFIG.valorMensal : CONFIG.valorAvulso;
 
             if (Math.abs(total - limite) > 0.01) {
-                alert(`Valor incorreto! O esperado é R$ ${limite.toFixed(2)}`);
+                alert(`Valor incorreto! O sistema espera R$ ${limite.toFixed(2)} para liberar este jogador.`);
                 return;
             }
 
@@ -414,7 +434,7 @@
         };
 
         window.zerarCaixa = async () => {
-            if (confirm("Deseja zerar os valores deste jogador?")) {
+            if (confirm("Deseja zerar os valores deste jogador? A presença será removida.")) {
                 await db.collection("jogadores_2026_beta").doc(selId).update({
                     valorMensalidadePago: 0,
                     valorPagoHoje: 0,
