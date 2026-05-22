@@ -219,7 +219,7 @@
 
         .badge-credito {
             background: rgba(163, 6, 6, 0.15);
-            color: #ff0000;
+            color: #c01d1d;
             border: 1px solid rgba(172, 8, 30, 0.295);
         }
 
@@ -417,36 +417,42 @@
                 if (buscaPagamento === 'pago' && !estaPago) return;
                 if (buscaPagamento === 'pendente' && estaPago) return;
 
-                // --- SISTEMA DINÂMICO DE VALORES POR BADGE ---
+                // --- SISTEMA DE LEITURA DE VALORES REAIS ---
                 let formaHTML = "-";
                 if (isGoleiro) {
                     formaHTML = "<span class='pg-badge' style='border:1px solid var(--gold); color:var(--gold)'>ISENTO</span>";
                 } else if (estaPago) {
-                    const fStr = String(j.formaPagamento || "").toLowerCase();
-                    let listFormas = [];
-
-                    // Separa os métodos salvos (ex: "Pix + Dinheiro" vira ["pix", "dinheiro"])
-                    if (fStr.includes("+")) {
-                        listFormas = fStr.split("+").map(item => item.trim());
-                    } else if (fStr !== "") {
-                        listFormas.push(fStr);
-                    }
-
                     let badges = [];
-                    // Se houver mais de uma forma de pagamento ativa, divide o valor igualmente entre elas para a exibição estática
-                    let valorPorBadge = listFormas.length > 0 ? totalGeralPago / listFormas.length : totalGeralPago;
 
-                    listFormas.forEach(metodo => {
-                        if (metodo.includes("pix")) {
-                            badges.push(`<span class='pg-badge badge-pix'><i class='fa-brands fa-pix'></i> R$ ${valorPorBadge.toFixed(2)} Pix</span>`);
+                    // Se o documento tiver os detalhes salvos do caixa, usa os valores reais digitados
+                    if (j.detalhesPagamento) {
+                        const d = j.detalhesPagamento;
+                        if (parseFloat(d.pix || 0) > 0) {
+                            badges.push(`<span class='pg-badge badge-pix'><i class='fa-brands fa-pix'></i> R$ ${parseFloat(d.pix).toFixed(2)} Pix</span>`);
                         }
-                        if (metodo.includes("dinheiro")) {
-                            badges.push(`<span class='pg-badge badge-dinheiro'><i class='fas fa-money-bill-wave'></i> R$ ${valorPorBadge.toFixed(2)} Dinheiro</span>`);
+                        if (parseFloat(d.dinheiro || 0) > 0) {
+                            badges.push(`<span class='pg-badge badge-dinheiro'><i class='fas fa-money-bill-wave'></i> R$ ${parseFloat(d.dinheiro).toFixed(2)} Dinheiro</span>`);
                         }
-                        if (metodo.includes("cartão") || metodo.includes("cartao") || metodo.includes("crédito") || metodo.includes("credito")) {
-                            badges.push(`<span class='pg-badge badge-credito'><i class='fas fa-credit-card'></i> R$ ${valorPorBadge.toFixed(2)} Cartão</span>`);
+                        if (parseFloat(d.cartao || 0) > 0) {
+                            badges.push(`<span class='pg-badge badge-credito'><i class='fas fa-credit-card'></i> R$ ${parseFloat(d.cartao).toFixed(2)} Cartão</span>`);
                         }
-                    });
+                    } else {
+                        // Modo de compatibilidade antiga (se não achar detalhes, divide igual)
+                        const fStr = String(j.formaPagamento || "").toLowerCase();
+                        let listFormas = [];
+                        if (fStr.includes("+")) {
+                            listFormas = fStr.split("+").map(item => item.trim());
+                        } else if (fStr !== "") {
+                            listFormas.push(fStr);
+                        }
+                        let valorPorBadge = listFormas.length > 0 ? totalGeralPago / listFormas.length : totalGeralPago;
+
+                        listFormas.forEach(metodo => {
+                            if (metodo.includes("pix")) badges.push(`<span class='pg-badge badge-pix'><i class='fa-brands fa-pix'></i> R$ ${valorPorBadge.toFixed(2)} Pix</span>`);
+                            if (metodo.includes("dinheiro")) badges.push(`<span class='pg-badge badge-dinheiro'><i class='fas fa-money-bill-wave'></i> R$ ${valorPorBadge.toFixed(2)} Dinheiro</span>`);
+                            if (metodo.includes("cartão") || metodo.includes("cartao") || metodo.includes("crédito")) badges.push(`<span class='pg-badge badge-credito'><i class='fas fa-credit-card'></i> R$ ${valorPorBadge.toFixed(2)} Cartão</span>`);
+                        });
+                    }
 
                     formaHTML = badges.length > 0 ? `<div class="pg-badge-group">${badges.join("")}</div>` : "<span class='pg-badge' style='background: #334155'>Confirmado</span>";
                 }

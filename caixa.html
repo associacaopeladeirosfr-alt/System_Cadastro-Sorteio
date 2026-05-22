@@ -426,7 +426,7 @@
                 return;
             }
 
-            // Lógica para múltiplas formas de pagamento
+            // Cria uma lista de textos para manter a compatibilidade antiga se necessário
             let formas = [];
             if (pix > 0) formas.push("Pix");
             if (din > 0) formas.push("Dinheiro");
@@ -434,7 +434,13 @@
 
             const dadosUpdate = {
                 [selCampo]: total,
-                formaPagamento: formas.join(" + "), // Salva como "Pix + Dinheiro"
+                formaPagamento: formas.join(" + "),
+                // Novo objeto com os valores exatos digitados no modal:
+                detalhesPagamento: {
+                    pix: pix,
+                    dinheiro: din,
+                    cartao: crd
+                },
                 presencaConfirmada: "S",
                 dataConfirmacao: new Date().toISOString()
             };
