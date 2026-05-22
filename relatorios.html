@@ -415,20 +415,24 @@
                 if (buscaPagamento === 'pendente' && estaPago) return;
 
                 // Definir Ícone da Forma de Pagamento
-                let badgeForma = "-";
+                let formaHTML = "-";
                 if (isGoleiro) {
-                    badgeForma = "<span class='pg-badge' style='color:var(--gold); border:1px solid var(--gold)'>Isento</span>";
+                    formaHTML = "<span class='pg-badge' style='border:1px solid var(--gold); color:var(--gold)'>ISENTO</span>";
                 } else if (estaPago) {
-                    const metodo = String(j.formaPagamento || "").toLowerCase();
-                    if (metodo.includes("pix")) {
-                        badgeForma = "<span class='pg-badge badge-pix'><i class='fa-solid fa-qrcode'></i> Pix</span>";
-                    } else if (metodo.includes("dinheiro")) {
-                        badgeForma = "<span class='pg-badge badge-dinheiro'><i class='fa-solid fa-money-bill-1'></i> Dinheiro</span>";
-                    } else if (metodo.includes("cartao") || metodo.includes("cartão") || metodo.includes("credito")) {
-                        badgeForma = "<span class='pg-badge badge-credito'><i class='fa-solid fa-credit-card'></i> Cartão</span>";
-                    } else {
-                        badgeForma = "<span class='pg-badge' style='border: 1px solid var(--border)'>Confirmado</span>";
-                    }
+                    const fStr = String(j.formaPagamento || "").toLowerCase();
+                    let badges = [];
+
+                    if (fStr.includes("pix"))
+                        badges.push("<span class='pg-badge badge-pix'><i class='fa-brands fa-pix'></i> Pix</span>");
+
+                    if (fStr.includes("dinheiro"))
+                        badges.push("<span class='pg-badge badge-dinheiro'><i class='fas fa-money-bill-wave'></i> Dinheiro</span>");
+
+                    if (fStr.includes("cartão") || fStr.includes("cartao") || fStr.includes("crédito"))
+                        badges.push("<span class='pg-badge badge-credito'><i class='fas fa-credit-card'></i> Cartão</span>");
+
+                    // Se houver badges, junta todos com um espaço, senão mostra "Confirmado"
+                    formaHTML = badges.length > 0 ? badges.join(" ") : "<span class='pg-badge' style='background: #334155'>Confirmado</span>";
                 }
 
                 // Contadores

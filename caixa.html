@@ -422,19 +422,19 @@
             const limite = selCampo === 'valorMensalidadePago' ? CONFIG.valorMensal : CONFIG.valorAvulso;
 
             if (Math.abs(total - limite) > 0.01) {
-                alert(`Valor incorreto! O sistema espera R$ ${limite.toFixed(2)} para liberar este jogador.`);
+                alert(`Valor incorreto! O sistema espera R$ ${limite.toFixed(2)}.`);
                 return;
             }
 
-            let formaEscolhida = "";
-            if (pix > 0) formaEscolhida = "Pix";
-            else if (din > 0) formaEscolhida = "Dinheiro";
-            else if (crd > 0) formaEscolhida = "Cartão";
+            // Lógica para múltiplas formas de pagamento
+            let formas = [];
+            if (pix > 0) formas.push("Pix");
+            if (din > 0) formas.push("Dinheiro");
+            if (crd > 0) formas.push("Cartão");
 
-            // Prepara o objeto de atualização
             const dadosUpdate = {
                 [selCampo]: total,
-                formaPagamento: formaEscolhida,
+                formaPagamento: formas.join(" + "), // Salva como "Pix + Dinheiro"
                 presencaConfirmada: "S",
                 dataConfirmacao: new Date().toISOString()
             };
@@ -444,7 +444,6 @@
                 window.fecharModal();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar pagamento.");
             }
         };
 
