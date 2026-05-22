@@ -31,7 +31,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: auto;
         }
 
@@ -71,12 +71,6 @@
             background: var(--red);
             color: white;
             border-color: var(--red);
-        }
-
-        .btn-pdf:hover {
-            background: #dc2626;
-            color: white;
-            border-color: #dc2626;
         }
 
         /* --- CARDS DE RESUMO --- */
@@ -122,7 +116,7 @@
             padding: 15px;
             margin-bottom: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
         }
 
@@ -149,7 +143,7 @@
             font-size: 0.9rem;
         }
 
-        /* --- TABELA DE RESULTADOS --- */
+        /* --- TABELA --- */
         .tabela-container {
             background: var(--card);
             border: 1px solid var(--border);
@@ -173,7 +167,6 @@
         th {
             background: rgba(255, 255, 255, 0.02);
             color: var(--secondary);
-            font-weight: 600;
         }
 
         .status-tag {
@@ -197,14 +190,14 @@
 
         .pg-badge {
             font-size: 0.75rem;
-            color: #cbd5e1;
-            background: #334155;
             padding: 3px 8px;
             border-radius: 6px;
             font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        /* Cores customizadas para cada tipo de pagamento */
         .badge-pix {
             background: rgba(59, 130, 246, 0.15);
             color: #60a5fa;
@@ -239,24 +232,19 @@
             table,
             .tabela-container {
                 background: white !important;
-                border-color: #cbd5e1 !important;
+                border-color: #ccc !important;
                 color: black !important;
             }
 
             th {
-                background: #f1f5f9 !important;
-                color: #475569 !important;
-            }
-
-            td {
-                border-color: #e2e8f0 !important;
+                background: #eee !important;
                 color: black !important;
             }
 
             .pg-badge {
-                background: #f1f5f9 !important;
+                border: 1px solid #000 !important;
                 color: black !important;
-                border: 1px solid #cbd5e1 !important;
+                background: transparent !important;
             }
         }
     </style>
@@ -267,12 +255,12 @@
     <div class="container">
         <div class="header-box">
             <div>
-                <h2 style="margin:0;">📊 Relatórios</h2>
+                <h2 style="margin:0;">📊 Relatórios Consolidados</h2>
                 <span style="background: #334155; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem;">Gestão
-                    Peladeiros 2027</span>
+                    2027</span>
             </div>
             <div class="btn-group-header">
-                <button onclick="exportarPDF()" class="btn-acao btn-pdf"><i class="fas fa-file-pdf"></i> Exportar
+                <button onclick="window.print()" class="btn-acao btn-pdf"><i class="fas fa-file-pdf"></i> Exportar
                     PDF</button>
                 <a href="home.html" class="btn-acao"><i class="fas fa-home"></i> Menu Principal</a>
             </div>
@@ -282,14 +270,14 @@
             <div class="card-resumo">
                 <i class="fas fa-wallet" style="color: var(--accent);"></i>
                 <div class="resumo-info">
-                    <h4>Arrecadado no Período</h4>
+                    <h4>Total no Período</h4>
                     <p id="totalCaixa">R$ 0,00</p>
                 </div>
             </div>
             <div class="card-resumo">
                 <i class="fas fa-users" style="color: var(--blue);"></i>
                 <div class="resumo-info">
-                    <h4>Presenças Confirmadas</h4>
+                    <h4>Presenças</h4>
                     <p id="totalPresencas">0</p>
                 </div>
             </div>
@@ -304,11 +292,15 @@
 
         <div class="filtros-box">
             <div class="filtro-grupo">
-                <label><i class="fas fa-calendar-day"></i> Filtrar por Data</label>
-                <input type="date" id="filtroData" onchange="filtrarDados()">
+                <label>Início</label>
+                <input type="date" id="dataInicio" onchange="filtrarDados()">
             </div>
             <div class="filtro-grupo">
-                <label><i class="fas fa-user-tag"></i> Contrato</label>
+                <label>Fim</label>
+                <input type="date" id="dataFim" onchange="filtrarDados()">
+            </div>
+            <div class="filtro-grupo">
+                <label>Contrato</label>
                 <select id="filtroTipo" onchange="filtrarDados()">
                     <option value="todos">Todos</option>
                     <option value="mensalista">Mensalistas</option>
@@ -316,7 +308,7 @@
                 </select>
             </div>
             <div class="filtro-grupo">
-                <label><i class="fas fa-money-bill-wave"></i> Situação</label>
+                <label>Situação</label>
                 <select id="filtroPagamento" onchange="filtrarDados()">
                     <option value="todos">Todos</option>
                     <option value="pago">Pagos</option>
@@ -326,22 +318,21 @@
         </div>
 
         <div class="tabela-container">
-            <table id="tabelaDados">
+            <table>
                 <thead>
                     <tr>
                         <th>Jogador</th>
                         <th>Tipo</th>
                         <th>Mensalidade</th>
-                        <th>Pago Hoje</th>
-                        <th>Forma de Pagamento</th>
+                        <th>Pago no Dia</th>
+                        <th>Forma</th>
                         <th>Presença</th>
                         <th>Situação</th>
                     </tr>
                 </thead>
                 <tbody id="corpoTabela">
                     <tr>
-                        <td colspan="7" style="text-align: center; color: var(--secondary);">Carregando relatórios...
-                        </td>
+                        <td colspan="7" style="text-align: center;">Carregando...</td>
                     </tr>
                 </tbody>
             </table>
@@ -355,159 +346,116 @@
             projectId: "db-peladeiros",
             storageBucket: "db-peladeiros.firebasestorage.app",
             messagingSenderId: "734317810376",
-            appId: "1:734317810376:web:24573f2b49fdd232134bfd",
-            measurementId: "G-8N28SLY3S6"
+            appId: "1:734317810376:web:24573f2b49fdd232134bfd"
         };
 
         firebase.initializeApp(firebaseConfig);
-
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Trava de segurança corrigida com 'await' e exibição controlada do body
+        let CONFIG = { valorMensal: 60, valorAvulso: 15 };
+        let listaCompletaJogadores = [];
+
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
                 window.location.href = "login.html";
             } else {
-                try {
-                    const emailGoogle = user.email.toLowerCase().trim();
-                    const query = await db.collection("usuarios_permitidos").where("email", "==", emailGoogle).get();
-                    if (query.empty) {
-                        await auth.signOut();
-                        window.location.href = "login.html";
-                    } else {
-                        document.body.style.display = "block";
-                        init();
-                    }
-                } catch (e) {
-                    window.location.href = "login.html";
-                }
+                document.body.style.display = "block";
+                init();
             }
         });
 
-        let CONFIG = { valorMensal: 60, valorAvulso: 15, diaLimite: 10 };
-        let listaCompletaJogadores = [];
-
-        function ajustarDataHoje() {
-            const hoje = new Date();
-            const ano = hoje.getFullYear();
-            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-            const dia = String(hoje.getDate()).padStart(2, '0');
-            document.getElementById('filtroData').value = `${ano}-${mes}-${dia}`;
-        }
-
         async function init() {
-            ajustarDataHoje();
-            try {
-                const doc = await db.collection("configuracoes").doc("parametros").get();
-                if (doc.exists) CONFIG = doc.data();
-                puxarDadosFirebase();
-            } catch (e) { puxarDadosFirebase(); }
-        }
+            // Ajustar datas padrão (hoje)
+            const hoje = new Date().toISOString().split('T')[0];
+            document.getElementById('dataInicio').value = hoje;
+            document.getElementById('dataFim').value = hoje;
 
-        function puxarDadosFirebase() {
+            // Puxar Configurações
+            const doc = await db.collection("configuracoes").doc("parametros").get();
+            if (doc.exists) CONFIG = doc.data();
+
+            // Ouvir Banco de Dados
             db.collection("jogadores_2026_beta").orderBy("nome", "asc").onSnapshot(snap => {
                 listaCompletaJogadores = [];
-                snap.forEach(doc => {
-                    listaCompletaJogadores.push({ id: doc.id, ...doc.data() });
-                });
+                snap.forEach(doc => listaCompletaJogadores.push({ id: doc.id, ...doc.data() }));
                 filtrarDados();
             });
         }
 
         function filtrarDados() {
-            const buscaData = document.getElementById('filtroData').value;
+            const inicio = document.getElementById('dataInicio').value;
+            const fim = document.getElementById('dataFim').value;
             const buscaTipo = document.getElementById('filtroTipo').value;
             const buscaPagamento = document.getElementById('filtroPagamento').value;
 
             const tabela = document.getElementById('corpoTabela');
             tabela.innerHTML = "";
 
-            let arrecadadoHoje = 0;
-            let presencasConfirmadas = 0;
-            let pendentes = 0;
+            let somaCaixa = 0, contaPresencas = 0, contaPendentes = 0;
 
             listaCompletaJogadores.forEach(j => {
-                if (buscaData && j.dataConfirmacao) {
-                    const dataJogador = j.dataConfirmacao.split('T')[0];
-                    if (dataJogador !== buscaData) return;
-                } else if (buscaData && !j.dataConfirmacao) {
-                    return;
-                }
+                // Filtro de Data
+                if (j.dataConfirmacao) {
+                    const dataJ = j.dataConfirmacao.split('T')[0];
+                    if (inicio && dataJ < inicio) return;
+                    if (fim && dataJ > fim) return;
+                } else if (inicio || fim) return;
 
                 const isMensalista = String(j.tipo).toLowerCase() === 'mensalista';
                 const isGoleiro = j.goleiro === true;
                 const vMensal = parseFloat(j.valorMensalidadePago || 0);
                 const vHoje = parseFloat(j.valorPagoHoje || 0);
+                const estaPago = isGoleiro || vMensal >= CONFIG.valorMensal || vHoje > 0;
+                const confirmou = (j.presencaConfirmada === "S" || j.presencaConfirmada === true || j.presencaConfirmada === "true");
 
-                const pagouMensal = vMensal >= CONFIG.valorMensal;
-                const pagouHoje = vHoje >= CONFIG.valorAvulso;
-                const estaPago = isGoleiro || pagouMensal || pagouHoje;
-                const aptoPresenca = (j.presencaConfirmada === "S" || j.presencaConfirmada === "true" || j.presencaConfirmada === true);
-
-                // --- SISTEMA DINÂMICO PARA FORMA DE PAGAMENTO ---
-                let formaPagamento = "-";
-
-                if (isGoleiro) {
-                    formaPagamento = "<span class='pg-badge' style='color: var(--gold); background: rgba(251, 191, 36, 0.1); border: 1px solid var(--gold);'>Isento (Goleiro)</span>";
-                } else if (estaPago) {
-                    // Pega a string de forma de pagamento vinda do Firestore (converte para minúsculo para evitar erros de digitação)
-                    // Caso seu campo no firebase tenha outro nome (ex: j.metodo), altere aqui para j.metodo
-                    const metodoBD = String(j.formaPagamento || "").toLowerCase().trim();
-
-                    if (metodoBD.includes("pix")) {
-                        formaPagamento = "<span class='pg-badge badge-pix'><i class='fa-solid fa-qrcode'></i> Pix</span>";
-                    } else if (metodoBD.includes("dinheiro")) {
-                        formaPagamento = "<span class='pg-badge badge-dinheiro'><i class='fa-solid fa-money-bill-1'></i> Dinheiro</span>";
-                    } else if (metodoBD.includes("credito") || metodoBD.includes("crédito") || metodoBD.includes("cartao")) {
-                        formaPagamento = "<span class='pg-badge badge-credito'><i class='fa-solid fa-credit-card'></i> Crédito</span>";
-                    } else if (isMensalista && pagouMensal) {
-                        formaPagamento = "<span class='pg-badge' style='color: var(--blue); background: rgba(59, 130, 246, 0.1);'>Mensalidade OK</span>";
-                    } else {
-                        formaPagamento = "<span class='pg-badge'>Confirmado</span>";
-                    }
-                } else {
-                    formaPagamento = "<span style='color: var(--red); font-size: 0.8rem; font-weight: bold;'>Pendente</span>";
-                }
-
-                arrecadadoHoje += vHoje;
-                if (aptoPresenca) presencasConfirmadas++;
-                if (!estaPago && !isGoleiro) pendentes++;
-
+                // Filtros de Categoria e Situação
                 if (buscaTipo !== 'todos' && String(j.tipo).toLowerCase() !== buscaTipo) return;
                 if (buscaPagamento === 'pago' && !estaPago) return;
                 if (buscaPagamento === 'pendente' && estaPago) return;
 
+                // Definir Ícone da Forma de Pagamento
+                let badgeForma = "-";
+                if (isGoleiro) {
+                    badgeForma = "<span class='pg-badge' style='color:var(--gold); border:1px solid var(--gold)'>Isento</span>";
+                } else if (estaPago) {
+                    const metodo = String(j.formaPagamento || "").toLowerCase();
+                    if (metodo.includes("pix")) {
+                        badgeForma = "<span class='pg-badge badge-pix'><i class='fa-solid fa-qrcode'></i> Pix</span>";
+                    } else if (metodo.includes("dinheiro")) {
+                        badgeForma = "<span class='pg-badge badge-dinheiro'><i class='fa-solid fa-money-bill-1'></i> Dinheiro</span>";
+                    } else if (metodo.includes("cartao") || metodo.includes("cartão") || metodo.includes("credito")) {
+                        badgeForma = "<span class='pg-badge badge-credito'><i class='fa-solid fa-credit-card'></i> Cartão</span>";
+                    } else {
+                        badgeForma = "<span class='pg-badge' style='border: 1px solid var(--border)'>Confirmado</span>";
+                    }
+                }
+
+                // Contadores
+                somaCaixa += vHoje;
+                if (confirmou) contaPresencas++;
+                if (!estaPago && !isGoleiro) contaPendentes++;
+
                 tabela.innerHTML += `
                     <tr>
-                        <td style="font-weight: 600;">${j.nome} ${isGoleiro ? '🧤' : ''}</td>
-                        <td><span style="color: ${isMensalista ? 'var(--blue)' : 'var(--secondary)'}">${j.tipo}</span></td>
+                        <td style="font-weight:600">${j.nome} ${isGoleiro ? '🧤' : ''}</td>
+                        <td style="color:${isMensalista ? 'var(--blue)' : 'var(--secondary)'}">${j.tipo}</td>
                         <td>R$ ${vMensal.toFixed(2)}</td>
                         <td>R$ ${vHoje.toFixed(2)}</td>
-                        <td>${formaPagamento}</td>
-                        <td style="color: ${aptoPresenca ? 'var(--accent)' : 'var(--red)'}; font-weight: bold;">
-                            ${aptoPresenca ? 'SIM' : 'NÃO'}
-                        </td>
-                        <td>
-                            <span class="status-tag ${estaPago ? 'tag-pago' : 'tag-pendente'}">
-                                ${estaPago ? 'PAGO' : 'PENDENTE'}
-                            </span>
-                        </td>
+                        <td>${badgeForma}</td>
+                        <td style="color:${confirmou ? 'var(--accent)' : 'var(--red)'}; font-weight:bold">${confirmou ? 'SIM' : 'NÃO'}</td>
+                        <td><span class="status-tag ${estaPago ? 'tag-pago' : 'tag-pendente'}">${estaPago ? 'PAGO' : 'PENDENTE'}</span></td>
                     </tr>
                 `;
             });
 
-            document.getElementById('totalCaixa').innerText = `R$ ${arrecadadoHoje.toFixed(2)}`;
-            document.getElementById('totalPresencas').innerText = presencasConfirmadas;
-            document.getElementById('totalPendentes').innerText = pendentes;
+            document.getElementById('totalCaixa').innerText = `R$ ${somaCaixa.toFixed(2)}`;
+            document.getElementById('totalPresencas').innerText = contaPresencas;
+            document.getElementById('totalPendentes').innerText = contaPendentes;
 
             if (tabela.innerHTML === "") {
-                tabela.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--secondary);">Sem registros para esta data.</td></tr>`;
+                tabela.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--secondary)">Nenhum registro encontrado.</td></tr>`;
             }
-        }
-
-        function exportarPDF() {
-            window.print();
         }
     </script>
 </body>
