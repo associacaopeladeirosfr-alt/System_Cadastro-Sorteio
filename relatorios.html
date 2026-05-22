@@ -188,6 +188,13 @@
             border: 1px solid var(--gold);
         }
 
+        .pg-badge-group {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
         .pg-badge {
             font-size: 0.75rem;
             padding: 3px 8px;
@@ -196,8 +203,6 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            margin-right: 4px;
-            margin-bottom: 2px;
         }
 
         .badge-pix {
@@ -214,7 +219,7 @@
 
         .badge-credito {
             background: rgba(163, 6, 6, 0.15);
-            color: #c01d1d;
+            color: #ff0000;
             border: 1px solid rgba(172, 8, 30, 0.295);
         }
 
@@ -368,16 +373,13 @@
         });
 
         async function init() {
-            // Ajustar datas padrão (hoje)
             const hoje = new Date().toISOString().split('T')[0];
             document.getElementById('dataInicio').value = hoje;
             document.getElementById('dataFim').value = hoje;
 
-            // Puxar Configurações
             const doc = await db.collection("configuracoes").doc("parametros").get();
             if (doc.exists) CONFIG = doc.data();
 
-            // Ouvir Banco de Dados
             db.collection("jogadores_2026_beta").orderBy("nome", "asc").onSnapshot(snap => {
                 listaCompletaJogadores = [];
                 snap.forEach(doc => listaCompletaJogadores.push({ id: doc.id, ...doc.data() }));
@@ -397,7 +399,6 @@
             let somaCaixa = 0, contaPresencas = 0, contaPendentes = 0;
 
             listaCompletaJogadores.forEach(j => {
-                // Filtro de Data
                 if (j.dataConfirmacao) {
                     const dataJ = j.dataConfirmacao.split('T')[0];
                     if (inicio && dataJ < inicio) return;
@@ -408,36 +409,48 @@
                 const isGoleiro = j.goleiro === true;
                 const vMensal = parseFloat(j.valorMensalidadePago || 0);
                 const vHoje = parseFloat(j.valorPagoHoje || 0);
+                const totalGeralPago = vMensal > 0 ? vMensal : vHoje;
                 const estaPago = isGoleiro || vMensal >= CONFIG.valorMensal || vHoje > 0;
                 const confirmou = (j.presencaConfirmada === "S" || j.presencaConfirmada === true || j.presencaConfirmada === "true");
 
-                // Filtros de Categoria e Situação
                 if (buscaTipo !== 'todos' && String(j.tipo).toLowerCase() !== buscaTipo) return;
                 if (buscaPagamento === 'pago' && !estaPago) return;
                 if (buscaPagamento === 'pendente' && estaPago) return;
 
-                // Definir Ícone da Forma de Pagamento (Suporta multiplas formas juntas)
+                // --- SISTEMA DINÂMICO DE VALORES POR BADGE ---
                 let formaHTML = "-";
                 if (isGoleiro) {
                     formaHTML = "<span class='pg-badge' style='border:1px solid var(--gold); color:var(--gold)'>ISENTO</span>";
                 } else if (estaPago) {
                     const fStr = String(j.formaPagamento || "").toLowerCase();
+                    let listFormas = [];
+
+                    // Separa os métodos salvos (ex: "Pix + Dinheiro" vira ["pix", "dinheiro"])
+                    if (fStr.includes("+")) {
+                        listFormas = fStr.split("+").map(item => item.trim());
+                    } else if (fStr !== "") {
+                        listFormas.push(fStr);
+                    }
+
                     let badges = [];
+                    // Se houver mais de uma forma de pagamento ativa, divide o valor igualmente entre elas para a exibição estática
+                    let valorPorBadge = listFormas.length > 0 ? totalGeralPago / listFormas.length : totalGeralPago;
 
-                    if (fStr.includes("pix"))
-                        badges.push("<span class='pg-badge badge-pix'><i class='fa-brands fa-pix'></i> Pix</span>");
+                    listFormas.forEach(metodo => {
+                        if (metodo.includes("pix")) {
+                            badges.push(`<span class='pg-badge badge-pix'><i class='fa-brands fa-pix'></i> R$ ${valorPorBadge.toFixed(2)} Pix</span>`);
+                        }
+                        if (metodo.includes("dinheiro")) {
+                            badges.push(`<span class='pg-badge badge-dinheiro'><i class='fas fa-money-bill-wave'></i> R$ ${valorPorBadge.toFixed(2)} Dinheiro</span>`);
+                        }
+                        if (metodo.includes("cartão") || metodo.includes("cartao") || metodo.includes("crédito") || metodo.includes("credito")) {
+                            badges.push(`<span class='pg-badge badge-credito'><i class='fas fa-credit-card'></i> R$ ${valorPorBadge.toFixed(2)} Cartão</span>`);
+                        }
+                    });
 
-                    if (fStr.includes("dinheiro"))
-                        badges.push("<span class='pg-badge badge-dinheiro'><i class='fas fa-money-bill-wave'></i> Dinheiro</span>");
-
-                    if (fStr.includes("cartão") || fStr.includes("cartao") || fStr.includes("crédito") || fStr.includes("credito"))
-                        badges.push("<span class='pg-badge badge-credito'><i class='fas fa-credit-card'></i> Cartão</span>");
-
-                    // Se houver badges gerados, junta com espaço; senão mostra "Confirmado"
-                    formaHTML = badges.length > 0 ? badges.join(" ") : "<span class='pg-badge' style='background: #334155'>Confirmado</span>";
+                    formaHTML = badges.length > 0 ? `<div class="pg-badge-group">${badges.join("")}</div>` : "<span class='pg-badge' style='background: #334155'>Confirmado</span>";
                 }
 
-                // Contadores
                 somaCaixa += vHoje;
                 if (confirmou) contaPresencas++;
                 if (!estaPago && !isGoleiro) contaPendentes++;
