@@ -196,6 +196,8 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            margin-right: 4px;
+            margin-bottom: 2px;
         }
 
         .badge-pix {
@@ -414,7 +416,7 @@
                 if (buscaPagamento === 'pago' && !estaPago) return;
                 if (buscaPagamento === 'pendente' && estaPago) return;
 
-                // Definir Ícone da Forma de Pagamento
+                // Definir Ícone da Forma de Pagamento (Suporta multiplas formas juntas)
                 let formaHTML = "-";
                 if (isGoleiro) {
                     formaHTML = "<span class='pg-badge' style='border:1px solid var(--gold); color:var(--gold)'>ISENTO</span>";
@@ -428,10 +430,10 @@
                     if (fStr.includes("dinheiro"))
                         badges.push("<span class='pg-badge badge-dinheiro'><i class='fas fa-money-bill-wave'></i> Dinheiro</span>");
 
-                    if (fStr.includes("cartão") || fStr.includes("cartao") || fStr.includes("crédito"))
+                    if (fStr.includes("cartão") || fStr.includes("cartao") || fStr.includes("crédito") || fStr.includes("credito"))
                         badges.push("<span class='pg-badge badge-credito'><i class='fas fa-credit-card'></i> Cartão</span>");
 
-                    // Se houver badges, junta todos com um espaço, senão mostra "Confirmado"
+                    // Se houver badges gerados, junta com espaço; senão mostra "Confirmado"
                     formaHTML = badges.length > 0 ? badges.join(" ") : "<span class='pg-badge' style='background: #334155'>Confirmado</span>";
                 }
 
@@ -446,7 +448,7 @@
                         <td style="color:${isMensalista ? 'var(--blue)' : 'var(--secondary)'}">${j.tipo}</td>
                         <td>R$ ${vMensal.toFixed(2)}</td>
                         <td>R$ ${vHoje.toFixed(2)}</td>
-                        <td>${badgeForma}</td>
+                        <td>${formaHTML}</td>
                         <td style="color:${confirmou ? 'var(--accent)' : 'var(--red)'}; font-weight:bold">${confirmou ? 'SIM' : 'NÃO'}</td>
                         <td><span class="status-tag ${estaPago ? 'tag-pago' : 'tag-pendente'}">${estaPago ? 'PAGO' : 'PENDENTE'}</span></td>
                     </tr>
