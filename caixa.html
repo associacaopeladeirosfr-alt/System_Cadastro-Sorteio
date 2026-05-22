@@ -413,6 +413,7 @@
             document.getElementById('modalFinanceiro').style.display = "block";
         };
 
+
         window.confirmarCaixa = async () => {
             const pix = parseFloat(document.getElementById('fPix').value) || 0;
             const din = parseFloat(document.getElementById('fDin').value) || 0;
@@ -425,12 +426,26 @@
                 return;
             }
 
-            await db.collection("jogadores_2026_beta").doc(selId).update({
+            let formaEscolhida = "";
+            if (pix > 0) formaEscolhida = "Pix";
+            else if (din > 0) formaEscolhida = "Dinheiro";
+            else if (crd > 0) formaEscolhida = "Cartão";
+
+            // Prepara o objeto de atualização
+            const dadosUpdate = {
                 [selCampo]: total,
+                formaPagamento: formaEscolhida,
                 presencaConfirmada: "S",
                 dataConfirmacao: new Date().toISOString()
-            });
-            window.fecharModal();
+            };
+
+            try {
+                await db.collection("jogadores_2026_beta").doc(selId).update(dadosUpdate);
+                window.fecharModal();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar pagamento.");
+            }
         };
 
         window.zerarCaixa = async () => {
@@ -438,12 +453,12 @@
                 await db.collection("jogadores_2026_beta").doc(selId).update({
                     valorMensalidadePago: 0,
                     valorPagoHoje: 0,
+                    formaPagamento: "",
                     presencaConfirmada: "N"
                 });
                 window.fecharModal();
             }
         };
-
         window.fecharModal = () => document.getElementById('modalFinanceiro').style.display = "none";
 
         init();
