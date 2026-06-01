@@ -312,96 +312,19 @@
 
         function atualizarDadosDash() {
             db.collection("jogadores_2026_beta").onSnapshot(snap => {
-                let mensalistas = 0, avulsos = 0, pagosM = 0, pendentesM = 0;
-                let totalDiario = 0, totalMensal = 0, totalAnual = 0;
-
-                const agora = new Date();
-                const anoAtual = agora.getFullYear();
-                const mesAtual = agora.getMonth() + 1; // 1 a 12
-
-                // Criar string hoje no fuso local: AAAA-MM-DD
-                const anoH = agora.getFullYear();
-                const mesH = String(agora.getMonth() + 1).padStart(2, '0');
-                const diaH = String(agora.getDate()).padStart(2, '0');
-                const hojeStr = `${anoH}-${mesH}-${diaH}`;
+                if (snap.empty) {
+                    console.log("⚠️ ATENÇÃO: Nenhum documento encontrado na coleção 'jogadores_2026_beta'!");
+                    return;
+                }
 
                 snap.forEach(doc => {
                     const j = doc.data();
-
-                    const vMensal = parseFloat(String(j.valorMensalidadePago || 0).replace(',', '.'));
-                    const vHoje = parseFloat(String(j.valorPagoHoje || 0).replace(',', '.'));
-                    const tipoAtleta = String(j.tipo || "").trim().toLowerCase();
-
-                    if (tipoAtleta === 'mensalista') {
-                        mensalistas++;
-                        if (vMensal > 0) pagosM++;
-                        else pendentesM++;
-                    } else {
-                        avulsos++;
-                    }
-
-                    // CORREÇÃO DA TRATATIVA DE DATA (Suporta String, Date ou Timestamp do Firebase)
-                    if (j.detalhePagamento && j.detalhePagamento.data) {
-                        let dataPagto;
-
-                        // Se for Timestamp do Firebase (.seconds)
-                        if (j.detalhePagamento.data.seconds) {
-                            dataPagto = new Date(j.detalhePagamento.data.seconds * 1000);
-                        }
-                        // Se for uma instância de Date ou String executável
-                        else {
-                            dataPagto = new Date(j.detalhePagamento.data);
-                        }
-
-                        // Validar se a data se tornou um objeto Date válido
-                        if (!isNaN(dataPagto.getTime())) {
-                            const pagtoAno = dataPagto.getFullYear();
-                            const pagtoMes = dataPagto.getMonth() + 1;
-
-                            const pAnoStr = pagtoAno;
-                            const pMesStr = String(pagtoMes).padStart(2, '0');
-                            const pDiaStr = String(dataPagto.getDate()).padStart(2, '0');
-                            const dataLimpa = `${pAnoStr}-${pMesStr}-${pDiaStr}`;
-
-                            const valorCalculado = (tipoAtleta === 'mensalista') ? vMensal : vHoje;
-
-                            if (dataLimpa === hojeStr) totalDiario += valorCalculado;
-                            if (pagtoMes === mesAtual && pagtoAno === anoAtual) totalMensal += valorCalculado;
-                            if (pagtoAno === anoAtual) totalAnual += valorCalculado;
-                        }
-                    }
+                    console.log(`--- Jogador: ${j.nome || 'Sem Nome'} ---`);
+                    console.log("Tipo:", j.tipo);
+                    console.log("Valor Mensalidade Pago:", j.valorMensalidadePago);
+                    console.log("Valor Pago Hoje:", j.valorPagoHoje);
+                    console.log("detalhePagamento completo:", j.detalhePagamento);
                 });
-
-                try {
-                    const formatar = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-                    document.getElementById('fatuDiario').innerText = formatar(totalDiario);
-                    document.getElementById('fatuMensal').innerText = formatar(totalMensal);
-                    document.getElementById('fatuAnual').innerText = formatar(totalAnual);
-                    document.getElementById('totalAtletas').innerText = snap.size;
-                    document.getElementById('countPagos').innerText = pagosM;
-
-                    const porc = mensalistas > 0 ? Math.round((pagosM / mensalistas) * 100) : 0;
-                    document.getElementById('labelSaude').innerText = `${porc}% de adesão mensal`;
-
-                    if (document.getElementById('dataHoje')) document.getElementById('dataHoje').innerText = agora.toLocaleDateString('pt-BR');
-                    if (document.getElementById('nomeMes')) document.getElementById('nomeMes').innerText = agora.toLocaleString('pt-BR', { month: 'long' });
-                    if (document.getElementById('nomeAno')) document.getElementById('nomeAno').innerText = anoAtual;
-
-                    if (chartP) {
-                        chartP.data.datasets[0].data = [pagosM, pendentesM];
-                        chartP.update();
-                    }
-                    if (chartB) {
-                        chartB.data.datasets[0].data = [mensalistas, avulsos];
-                        chartB.update();
-                    }
-
-                    console.log("Dash Atualizado:", { pagosM, pendentesM, totalMensal, totalDiario, totalAnual });
-
-                } catch (err) {
-                    console.error("Erro ao renderizar dashboard:", err);
-                }
             });
         }
         function carregarHistoricoDash() {
