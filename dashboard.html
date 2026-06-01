@@ -317,8 +317,13 @@
 
                 const agora = new Date();
                 const anoAtual = agora.getFullYear();
-                const mesAtual = agora.getMonth() + 1;
-                const hojeStr = agora.toISOString().split('T')[0];
+                const mesAtual = agora.getMonth() + 1; // 1 a 12
+
+                // Criar string hoje no fuso local: AAAA-MM-DD
+                const anoH = agora.getFullYear();
+                const mesH = String(agora.getMonth() + 1).padStart(2, '0');
+                const diaH = String(agora.getDate()).padStart(2, '0');
+                const hojeStr = `${anoH}-${mesH}-${diaH}`;
 
                 snap.forEach(doc => {
                     const j = doc.data();
@@ -335,17 +340,35 @@
                         avulsos++;
                     }
 
+                    // CORREÇÃO DA TRATATIVA DE DATA (Suporta String, Date ou Timestamp do Firebase)
                     if (j.detalhePagamento && j.detalhePagamento.data) {
-                        const dataLimpa = String(j.detalhePagamento.data).substring(0, 10);
-                        const partes = dataLimpa.split('-');
-                        const pagtoAno = parseInt(partes[0]);
-                        const pagtoMes = parseInt(partes[1]);
+                        let dataPagto;
 
-                        const valorCalculado = (tipoAtleta === 'mensalista') ? vMensal : vHoje;
+                        // Se for Timestamp do Firebase (.seconds)
+                        if (j.detalhePagamento.data.seconds) {
+                            dataPagto = new Date(j.detalhePagamento.data.seconds * 1000);
+                        }
+                        // Se for uma instância de Date ou String executável
+                        else {
+                            dataPagto = new Date(j.detalhePagamento.data);
+                        }
 
-                        if (dataLimpa === hojeStr) totalDiario += valorCalculado;
-                        if (pagtoMes === mesAtual && pagtoAno === anoAtual) totalMensal += valorCalculado;
-                        if (pagtoAno === anoAtual) totalAnual += valorCalculado;
+                        // Validar se a data se tornou um objeto Date válido
+                        if (!isNaN(dataPagto.getTime())) {
+                            const pagtoAno = dataPagto.getFullYear();
+                            const pagtoMes = dataPagto.getMonth() + 1;
+
+                            const pAnoStr = pagtoAno;
+                            const pMesStr = String(pagtoMes).padStart(2, '0');
+                            const pDiaStr = String(dataPagto.getDate()).padStart(2, '0');
+                            const dataLimpa = `${pAnoStr}-${pMesStr}-${pDiaStr}`;
+
+                            const valorCalculado = (tipoAtleta === 'mensalista') ? vMensal : vHoje;
+
+                            if (dataLimpa === hojeStr) totalDiario += valorCalculado;
+                            if (pagtoMes === mesAtual && pagtoAno === anoAtual) totalMensal += valorCalculado;
+                            if (pagtoAno === anoAtual) totalAnual += valorCalculado;
+                        }
                     }
                 });
 
@@ -374,14 +397,13 @@
                         chartB.update();
                     }
 
-                    console.log("Dash Atualizado:", { pagosM, pendentesM, totalMensal });
+                    console.log("Dash Atualizado:", { pagosM, pendentesM, totalMensal, totalDiario, totalAnual });
 
                 } catch (err) {
                     console.error("Erro ao renderizar dashboard:", err);
                 }
             });
         }
-
         function carregarHistoricoDash() {
             db.collection("historico_sorteios").orderBy("data", "desc").limit(3).onSnapshot(snap => {
                 const lista = document.getElementById('listaHistoricoDash');
