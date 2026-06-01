@@ -312,19 +312,109 @@
 
         function atualizarDadosDash() {
             db.collection("jogadores_2026_beta").onSnapshot(snap => {
-                if (snap.empty) {
-                    console.log("⚠️ ATENÇÃO: Nenhum documento encontrado na coleção 'jogadores_2026_beta'!");
-                    return;
-                }
+                let mensalistas = 0, avulsos = 0, pagosM = 0, pendentesM = 0;
+                let totalDiario = 0, totalMensal = 0, totalAnual = 0;
+
+                const agora = new Date();
+                const anoAtual = agora.getFullYear();
+                const mesAtual = agora.getMonth() + 1; // 1 a 12
+
+                // Formato local AAAA-MM-DD para o dia de hoje
+                const anoH = agora.getFullYear();
+                const mesH = String(agora.getMonth() + 1).padStart(2, '0');
+                const diaH = String(agora.getDate()).padStart(2, '0');
+                const hojeStr = `${anoH}-${mesH}-${diaH}`;
 
                 snap.forEach(doc => {
                     const j = doc.data();
-                    console.log(`--- Jogador: ${j.nome || 'Sem Nome'} ---`);
-                    console.log("Tipo:", j.tipo);
-                    console.log("Valor Mensalidade Pago:", j.valorMensalidadePago);
-                    console.log("Valor Pago Hoje:", j.valorPagoHoje);
-                    console.log("detalhePagamento completo:", j.detalhePagamento);
+
+                    const vMensal = parseFloat(String(j.valorMensalidadePago || 0).replace(',', '.'));
+                    const vHoje = parseFloat(String(j.valorPagoHoje || 0).replace(',', '.'));
+                    const tipoAtleta = String(j.tipo || "").trim().toLowerCase();
+
+                    // 1. Contagem de Mensalistas e Avulsos
+                    if (tipoAtleta === 'mensalista') {
+                        mensalistas++;
+                        if (vMensal > 0) {
+                            pagosM++;
+                        } else {
+                            pendentesM++;
+                        }
+                    } else {
+                        avulsos++;
+                    }
+
+                    // 2. Cálculo dos Faturamentos com validação flexível de data
+                    const valorCalculado = (tipoAtleta === 'mensalista') ? vMensal : vHoje;
+
+                    if (valorCalculado > 0) {
+                        // Se houver uma data registrada, filtramos por ela
+                        if (j.detalhePagamento && j.detalhePagamento.data) {
+                            let dataPagto;
+
+                            if (j.detalhePagamento.data.seconds) {
+                                dataPagto = new Date(j.detalhePagamento.data.seconds * 1000);
+                            } else {
+                                dataPagto = new Date(j.detalhePagamento.data);
+                            }
+
+                            if (!isNaN(dataPagto.getTime())) {
+                                const pagtoAno = dataPagto.getFullYear();
+                                const pagtoMes = dataPagto.getMonth() + 1;
+
+                                const pAnoStr = pagtoAno;
+                                const pMesStr = String(pagtoMes).padStart(2, '0');
+                                const pDiaStr = String(dataPagto.getDate()).padStart(2, '0');
+                                const dataLimpa = `${pAnoStr}-${pMesStr}-${pDiaStr}`;
+
+                                // Soma no Diário (Se for hoje)
+                                if (dataLimpa === hojeStr) totalDiario += valorCalculado;
+
+                                // Soma no Mensal (Se for no mês atual e ano atual)
+                                if (pagtoMes === mesAtual && pagtoAno === anoAtual) totalMensal += valorCalculado;
+
+                                // Soma no Anual (Se for no ano atual)
+                                if (pagtoAno === anoAtual) totalAnual += valorCalculado;
+                            }
+                        } else {
+                            // CASO DE EMERGÊNCIA: Se o jogador pagou mas não tem o campo de data salvo, 
+                            // somamos direto no Geral/Mensal para o painel não ficar zerado.
+                            totalMensal += valorCalculado;
+                            totalAnual += valorCalculado;
+                        }
+                    }
                 });
+
+                try {
+                    const formatar = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                    document.getElementById('fatuDiario').innerText = formatar(totalDiario);
+                    document.getElementById('fatuMensal').innerText = formatar(totalMensal);
+                    document.getElementById('fatuAnual').innerText = formatar(totalAnual);
+                    document.getElementById('totalAtletas').innerText = snap.size;
+                    document.getElementById('countPagos').innerText = pagosM;
+
+                    const porc = mensalistas > 0 ? Math.round((pagosM / mensalistas) * 100) : 0;
+                    document.getElementById('labelSaude').innerText = `${porc}% de adesão mensal`;
+
+                    if (document.getElementById('dataHoje')) document.getElementById('dataHoje').innerText = agora.toLocaleDateString('pt-BR');
+                    if (document.getElementById('nomeMes')) document.getElementById('nomeMes').innerText = agora.toLocaleString('pt-BR', { month: 'long' });
+                    if (document.getElementById('nomeAno')) document.getElementById('nomeAno').innerText = anoAtual;
+
+                    if (chartP) {
+                        chartP.data.datasets[0].data = [pagosM, pendentesM];
+                        chartP.update();
+                    }
+                    if (chartB) {
+                        chartB.data.datasets[0].data = [mensalistas, avulsos];
+                        chartB.update();
+                    }
+
+                    console.log("Dash Atualizado com Sucesso:", { pagosM, pendentesM, totalMensal, totalDiario, totalAnual });
+
+                } catch (err) {
+                    console.error("Erro ao renderizar dashboard:", err);
+                }
             });
         }
         function carregarHistoricoDash() {
