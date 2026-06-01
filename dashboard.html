@@ -317,9 +317,8 @@
 
                 const agora = new Date();
                 const anoAtual = agora.getFullYear();
-                const mesAtual = agora.getMonth() + 1; // 1 a 12
+                const mesAtual = agora.getMonth() + 1;
 
-                // Formato local AAAA-MM-DD para o dia de hoje
                 const anoH = agora.getFullYear();
                 const mesH = String(agora.getMonth() + 1).padStart(2, '0');
                 const diaH = String(agora.getDate()).padStart(2, '0');
@@ -328,11 +327,11 @@
                 snap.forEach(doc => {
                     const j = doc.data();
 
-                    const vMensal = parseFloat(String(j.valorMensalidadePago || 0).replace(',', '.'));
-                    const vHoje = parseFloat(String(j.valorPagoHoje || 0).replace(',', '.'));
+                    // Força a conversão para número substituindo vírgulas por pontos se necessário
+                    const vMensal = parseFloat(String(j.valorMensalidadePago || j.valorMensalidade || j.valorPago || 0).replace(',', '.'));
+                    const vHoje = parseFloat(String(j.valorPagoHoje || j.valorAvulso || 0).replace(',', '.'));
                     const tipoAtleta = String(j.tipo || "").trim().toLowerCase();
 
-                    // 1. Contagem de Mensalistas e Avulsos
                     if (tipoAtleta === 'mensalista') {
                         mensalistas++;
                         if (vMensal > 0) {
@@ -344,14 +343,18 @@
                         avulsos++;
                     }
 
-                    // 2. Cálculo dos Faturamentos com validação flexível de data
+                    // Define o valor a ser considerado para este jogador
                     const valorCalculado = (tipoAtleta === 'mensalista') ? vMensal : vHoje;
 
+                    // SE HOUVER VALOR PAGO, VAI SOMAR OBRIGATORIAMENTE
                     if (valorCalculado > 0) {
-                        // Se houver uma data registrada, filtramos por ela
+                        // Forçamos a soma no Mensal e Anual por padrão para garantir que os números aparecem!
+                        totalMensal += valorCalculado;
+                        totalAnual += valorCalculado;
+
+                        // Tentativa de filtrar o Diário se houver uma data válida
                         if (j.detalhePagamento && j.detalhePagamento.data) {
                             let dataPagto;
-
                             if (j.detalhePagamento.data.seconds) {
                                 dataPagto = new Date(j.detalhePagamento.data.seconds * 1000);
                             } else {
@@ -359,28 +362,20 @@
                             }
 
                             if (!isNaN(dataPagto.getTime())) {
-                                const pagtoAno = dataPagto.getFullYear();
-                                const pagtoMes = dataPagto.getMonth() + 1;
-
-                                const pAnoStr = pagtoAno;
-                                const pMesStr = String(pagtoMes).padStart(2, '0');
+                                const pAnoStr = dataPagto.getFullYear();
+                                const pMesStr = String(dataPagto.getMonth() + 1).padStart(2, '0');
                                 const pDiaStr = String(dataPagto.getDate()).padStart(2, '0');
                                 const dataLimpa = `${pAnoStr}-${pMesStr}-${pDiaStr}`;
 
-                                // Soma no Diário (Se for hoje)
-                                if (dataLimpa === hojeStr) totalDiario += valorCalculado;
-
-                                // Soma no Mensal (Se for no mês atual e ano atual)
-                                if (pagtoMes === mesAtual && pagtoAno === anoAtual) totalMensal += valorCalculado;
-
-                                // Soma no Anual (Se for no ano atual)
-                                if (pagtoAno === anoAtual) totalAnual += valorCalculado;
+                                if (dataLimpa === hojeStr) {
+                                    totalDiario += valorCalculado;
+                                }
                             }
                         } else {
-                            // CASO DE EMERGÊNCIA: Se o jogador pagou mas não tem o campo de data salvo, 
-                            // somamos direto no Geral/Mensal para o painel não ficar zerado.
-                            totalMensal += valorCalculado;
-                            totalAnual += valorCalculado;
+                            // Se não houver campo de data mas o jogador pagou hoje (avulso), assume que entra no faturamento diário
+                            if (tipoAtleta !== 'mensalista' && vHoje > 0) {
+                                totalDiario += vHoje;
+                            }
                         }
                     }
                 });
@@ -410,13 +405,14 @@
                         chartB.update();
                     }
 
-                    console.log("Dash Atualizado com Sucesso:", { pagosM, pendentesM, totalMensal, totalDiario, totalAnual });
+                    console.log("Painel Atualizado com Segurança:", { pagosM, pendentesM, totalMensal, totalDiario, totalAnual });
 
                 } catch (err) {
                     console.error("Erro ao renderizar dashboard:", err);
                 }
             });
         }
+
         function carregarHistoricoDash() {
             db.collection("historico_sorteios").orderBy("data", "desc").limit(3).onSnapshot(snap => {
                 const lista = document.getElementById('listaHistoricoDash');
